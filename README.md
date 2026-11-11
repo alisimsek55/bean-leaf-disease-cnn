@@ -197,4 +197,4 @@ The code is released under the [MIT License](LICENSE). That license does not ext
 
 ## How it was built
 
-Built with AI-assisted development (Claude Code).
+I built this project with AI-assisted development, using Claude Code as a pair programmer. I set the scope and the requirements from the course brief: the two diseases to separate from healthy leaves, a network designed from scratch rather than a pretrained one, a 70/30 train/validation split, and a way to show healthy, mildly diseased and diseased leaves. The AI did most of the implementation under that direction. The results, including the limitations above, are reported as they came out.
