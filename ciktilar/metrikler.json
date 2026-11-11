@@ -1,0 +1,729 @@
+{
+  "ana_model": {
+    "ad": "FasulyeCNN (sıfırdan, 16 katman)",
+    "giris_boyutu": 128,
+    "parametre_sayisi": 1772995,
+    "egitim_suresi_sn": 1009.1,
+    "calisan_epoch": 50,
+    "en_iyi_epoch": 35,
+    "egitim_ayarlari": {
+      "optimizer": "AdamW",
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "batch": 32,
+      "maks_epoch": 100,
+      "erken_durdurma_sabir": 15,
+      "lr_plani": "ReduceLROnPlateau(factor=0.5, patience=5)"
+    },
+    "kayip_agirliklari": [
+      1.5308310985565186,
+      3.524691343307495,
+      0.4847198724746704
+    ],
+    "egitim_sinif_sayilari": [
+      373,
+      162,
+      1178
+    ],
+    "cihaz": "cuda",
+    "en_iyi_epoch_egitim_dogrulugu": 0.9752358490566038,
+    "dogrulama": {
+      "dogruluk": 0.975609756097561,
+      "dengeli_dogruluk": 0.9867837262606418,
+      "makro_f1": 0.9548325237980411,
+      "sinif_bazinda": {
+        "adi_yaprak_yanikligi": {
+          "kesinlik": 1.0,
+          "duyarlilik": 0.99375,
+          "f1": 0.9968652037617555,
+          "destek": 160
+        },
+        "hale_yanikligi": {
+          "kesinlik": 0.7931034482758621,
+          "duyarlilik": 1.0,
+          "f1": 0.8846153846153846,
+          "destek": 69
+        },
+        "saglikli": {
+          "kesinlik": 1.0,
+          "duyarlilik": 0.9666011787819253,
+          "f1": 0.983016983016983,
+          "destek": 509
+        }
+      },
+      "karisiklik_matrisi": {
+        "satir=gercek, sutun=tahmin, sira": [
+          "adi_yaprak_yanikligi",
+          "hale_yanikligi",
+          "saglikli"
+        ],
+        "matris": [
+          [
+            159,
+            1,
+            0
+          ],
+          [
+            0,
+            69,
+            0
+          ],
+          [
+            0,
+            17,
+            492
+          ]
+        ]
+      },
+      "kaynak_bazinda": {
+        "adi_yaprak_yanikligi | kaynak C": {
+          "n": 8,
+          "dogruluk": 0.875,
+          "tahmin_dagilimi": {
+            "adi_yaprak_yanikligi": 7,
+            "hale_yanikligi": 1,
+            "saglikli": 0
+          }
+        },
+        "adi_yaprak_yanikligi | kaynak A": {
+          "n": 152,
+          "dogruluk": 1.0,
+          "tahmin_dagilimi": {
+            "adi_yaprak_yanikligi": 152,
+            "hale_yanikligi": 0,
+            "saglikli": 0
+          }
+        },
+        "hale_yanikligi | kaynak B": {
+          "n": 69,
+          "dogruluk": 1.0,
+          "tahmin_dagilimi": {
+            "adi_yaprak_yanikligi": 0,
+            "hale_yanikligi": 69,
+            "saglikli": 0
+          }
+        },
+        "saglikli | kaynak B": {
+          "n": 347,
+          "dogruluk": 0.9510086455331412,
+          "tahmin_dagilimi": {
+            "adi_yaprak_yanikligi": 0,
+            "hale_yanikligi": 17,
+            "saglikli": 330
+          }
+        },
+        "saglikli | kaynak A": {
+          "n": 162,
+          "dogruluk": 1.0,
+          "tahmin_dagilimi": {
+            "adi_yaprak_yanikligi": 0,
+            "hale_yanikligi": 0,
+            "saglikli": 162
+          }
+        },
+        "TUM | kaynak C": {
+          "n": 8,
+          "dogruluk": 0.875
+        },
+        "TUM | kaynak B": {
+          "n": 416,
+          "dogruluk": 0.9591346153846154
+        },
+        "TUM | kaynak A": {
+          "n": 314,
+          "dogruluk": 1.0
+        }
+      },
+      "cbb_hale_karisikligi": {
+        "cbb_iken_hale_denen": 1,
+        "hale_iken_cbb_denen": 0,
+        "cbb_toplam": 160,
+        "hale_toplam": 69,
+        "hastalikli_iken_saglikli_denen": 0,
+        "saglikli_iken_hastalikli_denen": 17
+      },
+      "gradcam_nicel": {
+        "adi_yaprak_yanikligi": {
+          "cam_payi_yaprak_ici": 0.5921054482460022,
+          "alan_payi_yaprak": 0.46422119140625,
+          "cam_payi_kenar_seridi": 0.10451173782348633,
+          "alan_payi_kenar_seridi": 0.10199699401855469,
+          "cam_payi_lezyon": 0.11117718368768692,
+          "alan_payi_lezyon": 0.07590599060058593,
+          "kenar_zenginlesme": 1.025934082020013,
+          "lezyon_zenginlesme_medyan": 1.4358586009145982
+        },
+        "hale_yanikligi": {
+          "cam_payi_yaprak_ici": 0.681463360786438,
+          "alan_payi_yaprak": 0.46841386435688404,
+          "cam_payi_kenar_seridi": 0.11369935423135757,
+          "alan_payi_kenar_seridi": 0.10149527287137682,
+          "cam_payi_lezyon": 0.07283993810415268,
+          "alan_payi_lezyon": 0.028017790421195652,
+          "kenar_zenginlesme": 1.136421274738774,
+          "lezyon_zenginlesme_medyan": 2.65229424541483
+        },
+        "saglikli": {
+          "cam_payi_yaprak_ici": 0.5486775040626526,
+          "alan_payi_yaprak": 0.4911416284227652,
+          "cam_payi_kenar_seridi": 0.0900469720363617,
+          "alan_payi_kenar_seridi": 0.10282745061548379,
+          "cam_payi_lezyon": 2.311216485395562e-05,
+          "alan_payi_lezyon": 3.2256300650785854e-05,
+          "kenar_zenginlesme": 0.8850265203737745,
+          "lezyon_zenginlesme_medyan": NaN
+        }
+      }
+    }
+  },
+  "taban_cizgisi_cogunluk_sinifi": {
+    "dogruluk": 0.6897018970189702,
+    "makro_f1": 0.2721197540764501
+  },
+  "kontrol_siluet": {
+    "dogruluk": 0.5230352303523035,
+    "dengeli_dogruluk": 0.5618977368715773,
+    "makro_f1": 0.47883406478454443,
+    "sinif_bazinda": {
+      "adi_yaprak_yanikligi": {
+        "kesinlik": 0.5416666666666666,
+        "duyarlilik": 0.73125,
+        "f1": 0.6223404255319149,
+        "destek": 160
+      },
+      "hale_yanikligi": {
+        "kesinlik": 0.14345991561181434,
+        "duyarlilik": 0.4927536231884058,
+        "f1": 0.2222222222222222,
+        "destek": 69
+      },
+      "saglikli": {
+        "kesinlik": 0.8245614035087719,
+        "duyarlilik": 0.46168958742632615,
+        "f1": 0.5919395465994962,
+        "destek": 509
+      }
+    },
+    "karisiklik_matrisi": {
+      "satir=gercek, sutun=tahmin, sira": [
+        "adi_yaprak_yanikligi",
+        "hale_yanikligi",
+        "saglikli"
+      ],
+      "matris": [
+        [
+          117,
+          17,
+          26
+        ],
+        [
+          11,
+          34,
+          24
+        ],
+        [
+          88,
+          186,
+          235
+        ]
+      ]
+    },
+    "kaynak_bazinda": {
+      "adi_yaprak_yanikligi | kaynak C": {
+        "n": 8,
+        "dogruluk": 0.875,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 7,
+          "hale_yanikligi": 0,
+          "saglikli": 1
+        }
+      },
+      "adi_yaprak_yanikligi | kaynak A": {
+        "n": 152,
+        "dogruluk": 0.7236842105263158,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 110,
+          "hale_yanikligi": 17,
+          "saglikli": 25
+        }
+      },
+      "hale_yanikligi | kaynak B": {
+        "n": 69,
+        "dogruluk": 0.4927536231884058,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 11,
+          "hale_yanikligi": 34,
+          "saglikli": 24
+        }
+      },
+      "saglikli | kaynak B": {
+        "n": 347,
+        "dogruluk": 0.5043227665706052,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 45,
+          "hale_yanikligi": 127,
+          "saglikli": 175
+        }
+      },
+      "saglikli | kaynak A": {
+        "n": 162,
+        "dogruluk": 0.37037037037037035,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 43,
+          "hale_yanikligi": 59,
+          "saglikli": 60
+        }
+      },
+      "TUM | kaynak C": {
+        "n": 8,
+        "dogruluk": 0.875
+      },
+      "TUM | kaynak B": {
+        "n": 416,
+        "dogruluk": 0.5024038461538461
+      },
+      "TUM | kaynak A": {
+        "n": 314,
+        "dogruluk": 0.5414012738853503
+      }
+    },
+    "egitim_suresi_sn": 486.9,
+    "calisan_epoch": 46,
+    "en_iyi_epoch": 31
+  },
+  "kontrol_kaynak_tahmini_saglikli": {
+    "dogruluk": 1.0,
+    "dengeli_dogruluk": 1.0,
+    "makro_f1": 1.0,
+    "sinif_bazinda": {
+      "A_siyah_kumas": {
+        "kesinlik": 1.0,
+        "duyarlilik": 1.0,
+        "f1": 1.0,
+        "destek": 162
+      },
+      "B_beyaz_zemin": {
+        "kesinlik": 1.0,
+        "duyarlilik": 1.0,
+        "f1": 1.0,
+        "destek": 347
+      }
+    },
+    "karisiklik_matrisi": {
+      "satir=gercek, sutun=tahmin, sira": [
+        "A_siyah_kumas",
+        "B_beyaz_zemin"
+      ],
+      "matris": [
+        [
+          162,
+          0
+        ],
+        [
+          0,
+          347
+        ]
+      ]
+    },
+    "egitim_ornek": 1176,
+    "calisan_epoch": 66
+  },
+  "kontrol_embrapa_kaynak_disi_test": {
+    "n": 27,
+    "dogruluk": 0.25925925925925924,
+    "sinif_bazinda": {
+      "adi_yaprak_yanikligi": {
+        "n": 25,
+        "dogru": 5,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 5,
+          "hale_yanikligi": 13,
+          "saglikli": 7
+        }
+      },
+      "saglikli": {
+        "n": 2,
+        "dogru": 2,
+        "tahmin_dagilimi": {
+          "adi_yaprak_yanikligi": 0,
+          "hale_yanikligi": 0,
+          "saglikli": 2
+        }
+      }
+    },
+    "ayni_model_AB_dogrulama": {
+      "dogruluk": 0.9958904109589041,
+      "makro_f1": 0.9919225797435628
+    }
+  },
+  "veri_bolme": {
+    "sinif_tablosu": [
+      {
+        "sinif": "adi_yaprak_yanikligi",
+        "egitim": 373,
+        "dogrulama": 160,
+        "toplam": 533,
+        "dogrulama_orani": 0.3
+      },
+      {
+        "sinif": "hale_yanikligi",
+        "egitim": 162,
+        "dogrulama": 69,
+        "toplam": 231,
+        "dogrulama_orani": 0.299
+      },
+      {
+        "sinif": "saglikli",
+        "egitim": 1178,
+        "dogrulama": 509,
+        "toplam": 1687,
+        "dogrulama_orani": 0.302
+      },
+      {
+        "sinif": "TOPLAM",
+        "egitim": 1713,
+        "dogrulama": 738,
+        "toplam": 2451,
+        "dogrulama_orani": 0.301
+      }
+    ],
+    "sinif_kaynak_tablosu": [
+      {
+        "sinif": "adi_yaprak_yanikligi",
+        "kaynak": "embrapa_pddb",
+        "dogrulama": 8,
+        "egitim": 17
+      },
+      {
+        "sinif": "adi_yaprak_yanikligi",
+        "kaynak": "mendeley_ykvcrjffzd",
+        "dogrulama": 152,
+        "egitim": 356
+      },
+      {
+        "sinif": "hale_yanikligi",
+        "kaynak": "mendeley_3km9d246z2",
+        "dogrulama": 69,
+        "egitim": 162
+      },
+      {
+        "sinif": "saglikli",
+        "kaynak": "embrapa_pddb",
+        "dogrulama": 0,
+        "egitim": 2
+      },
+      {
+        "sinif": "saglikli",
+        "kaynak": "mendeley_3km9d246z2",
+        "dogrulama": 347,
+        "egitim": 798
+      },
+      {
+        "sinif": "saglikli",
+        "kaynak": "mendeley_ykvcrjffzd",
+        "dogrulama": 162,
+        "egitim": 378
+      }
+    ],
+    "grup_sayilari": {
+      "adi_yaprak_yanikligi": {
+        "dogrulama": 159,
+        "egitim": 373
+      },
+      "hale_yanikligi": {
+        "dogrulama": 44,
+        "egitim": 102
+      },
+      "saglikli": {
+        "dogrulama": 284,
+        "egitim": 643
+      }
+    },
+    "dislanan_goruntu": 9,
+    "grup_sizintisi": 0
+  },
+  "siddet_tahmini": {
+    "yontem": "yaprak maskesi içinde yeşil olmayan piksel oranı (kural tabanlı, uzman etiketi değil)",
+    "renk_parametreleri": {
+      "A_kirmizi_esik": 4,
+      "H_sari_ust": 27,
+      "S_renkli_alt": 60,
+      "V_koyu_alt": 45,
+      "maske_asindirma": "5x5",
+      "medyan": "3x3",
+      "acma": "3x3"
+    },
+    "esikler": {
+      "T1_saglikli_ust": 0.005,
+      "T2_az_hastalikli_ust": 0.13,
+      "T1_kural": "saglikli sinifin lezyon oraninin %99'luk dilimi, yukari dogru %0.5'in katina yuvarlandi",
+      "T2_kural": "CBB+hale siniflarinin lezyon orani medyani, %1'e yuvarlandi",
+      "T1_ham": 0.004727999999999974,
+      "T2_ham": 0.1309
+    },
+    "duzey_sayilari_toplam": {
+      "sağlıklı": 1716,
+      "az hastalıklı": 347,
+      "hastalıklı": 388
+    },
+    "sinif_x_duzey": {
+      "adi_yaprak_yanikligi": {
+        "sağlıklı": 4,
+        "az hastalıklı": 161,
+        "hastalıklı": 368
+      },
+      "hale_yanikligi": {
+        "sağlıklı": 41,
+        "az hastalıklı": 170,
+        "hastalıklı": 20
+      },
+      "saglikli": {
+        "sağlıklı": 1671,
+        "az hastalıklı": 16,
+        "hastalıklı": 0
+      }
+    },
+    "sinif_lezyon_orani_istatistigi": {
+      "adi_yaprak_yanikligi": {
+        "count": 533.0,
+        "mean": 0.1937,
+        "std": 0.0961,
+        "min": 0.0003,
+        "10%": 0.0905,
+        "25%": 0.1199,
+        "50%": 0.182,
+        "75%": 0.2629,
+        "90%": 0.3194,
+        "max": 0.4698
+      },
+      "hale_yanikligi": {
+        "count": 231.0,
+        "mean": 0.0735,
+        "std": 0.0771,
+        "min": 0.0,
+        "10%": 0.0,
+        "25%": 0.015,
+        "50%": 0.0684,
+        "75%": 0.0968,
+        "90%": 0.1265,
+        "max": 0.4588
+      },
+      "saglikli": {
+        "count": 1687.0,
+        "mean": 0.0002,
+        "std": 0.0012,
+        "min": 0.0,
+        "10%": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "90%": 0.0003,
+        "max": 0.0313
+      }
+    },
+    "kaynak_bazinda_medyan": {
+      "adi_yaprak_yanikligi|embrapa_pddb": 0.0187,
+      "adi_yaprak_yanikligi|mendeley_ykvcrjffzd": 0.1906,
+      "hale_yanikligi|mendeley_3km9d246z2": 0.0684,
+      "saglikli|embrapa_pddb": 0.0024,
+      "saglikli|mendeley_3km9d246z2": 0.0,
+      "saglikli|mendeley_ykvcrjffzd": 0.0
+    }
+  },
+  "ek_modeller": {
+    "ek_efficientnet_b0": {
+      "model": "EfficientNet-B0 (ImageNet ön eğitimli, tüm ağ ince ayar)",
+      "giris": 224,
+      "parametre_sayisi": 4011391,
+      "egitim_suresi_sn": 699.0,
+      "calisan_epoch": 21,
+      "en_iyi_epoch": 13,
+      "dogruluk": 1.0,
+      "makro_f1": 1.0,
+      "sinif_bazinda": {
+        "adi_yaprak_yanikligi": {
+          "kesinlik": 1.0,
+          "duyarlilik": 1.0,
+          "f1": 1.0
+        },
+        "hale_yanikligi": {
+          "kesinlik": 1.0,
+          "duyarlilik": 1.0,
+          "f1": 1.0
+        },
+        "saglikli": {
+          "kesinlik": 1.0,
+          "duyarlilik": 1.0,
+          "f1": 1.0
+        }
+      },
+      "karisiklik_matrisi": [
+        [
+          160,
+          0,
+          0
+        ],
+        [
+          0,
+          69,
+          0
+        ],
+        [
+          0,
+          0,
+          509
+        ]
+      ],
+      "kaynak_bazinda": {
+        "adi_yaprak_yanikligi | kaynak C": {
+          "n": 8,
+          "dogruluk": 1.0
+        },
+        "adi_yaprak_yanikligi | kaynak A": {
+          "n": 152,
+          "dogruluk": 1.0
+        },
+        "hale_yanikligi | kaynak B": {
+          "n": 69,
+          "dogruluk": 1.0
+        },
+        "saglikli | kaynak B": {
+          "n": 347,
+          "dogruluk": 1.0
+        },
+        "saglikli | kaynak A": {
+          "n": 162,
+          "dogruluk": 1.0
+        }
+      },
+      "gecmis": [
+        {
+          "epoch": 1,
+          "dogrulama_kayip": 0.03629331464366861,
+          "dogrulama_dogruluk": 0.9932249322493225,
+          "dogrulama_makro_f1": 0.9842014234224051
+        },
+        {
+          "epoch": 2,
+          "dogrulama_kayip": 0.019394658334290753,
+          "dogrulama_dogruluk": 0.997289972899729,
+          "dogrulama_makro_f1": 0.9944444444444445
+        },
+        {
+          "epoch": 3,
+          "dogrulama_kayip": 0.016195086007660158,
+          "dogrulama_dogruluk": 0.986449864498645,
+          "dogrulama_makro_f1": 0.9734593045655552
+        },
+        {
+          "epoch": 4,
+          "dogrulama_kayip": 0.020096953090048095,
+          "dogrulama_dogruluk": 0.997289972899729,
+          "dogrulama_makro_f1": 0.9937970319565587
+        },
+        {
+          "epoch": 5,
+          "dogrulama_kayip": 0.00444983247778603,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 6,
+          "dogrulama_kayip": 0.005060470085035818,
+          "dogrulama_dogruluk": 0.9986449864498645,
+          "dogrulama_makro_f1": 0.996556986385813
+        },
+        {
+          "epoch": 7,
+          "dogrulama_kayip": 0.014227918722745042,
+          "dogrulama_dogruluk": 0.9850948509485095,
+          "dogrulama_makro_f1": 0.9717503204636894
+        },
+        {
+          "epoch": 8,
+          "dogrulama_kayip": 0.0008469010396610672,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 9,
+          "dogrulama_kayip": 0.0014702105540706496,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 10,
+          "dogrulama_kayip": 0.0012720356806406,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 11,
+          "dogrulama_kayip": 0.0031409888841962027,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 12,
+          "dogrulama_kayip": 0.00036883054792200817,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 13,
+          "dogrulama_kayip": 0.00016137571808171261,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 14,
+          "dogrulama_kayip": 0.0003892387050758608,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 15,
+          "dogrulama_kayip": 0.00023426789638701022,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 16,
+          "dogrulama_kayip": 9.298781262708167e-05,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 17,
+          "dogrulama_kayip": 0.00011288416936896113,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 18,
+          "dogrulama_kayip": 0.00011432999929707767,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 19,
+          "dogrulama_kayip": 0.0008489098439054834,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 20,
+          "dogrulama_kayip": 0.0002187167721889474,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 21,
+          "dogrulama_kayip": 0.0002744336660476881,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        }
+      ]
+    }
+  }
+}

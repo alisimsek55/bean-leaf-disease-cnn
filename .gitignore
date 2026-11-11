@@ -1,0 +1,24 @@
+# environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# downloaded / processed image data (not distributed)
+data/raw/
+data/raw_ek/
+data/_indirilen/
+data/islenmis/
+
+# model weights, logs, generated outputs other than the tracked metrics and figures
+*.pt
+logs/
+ciktilar/*
+!ciktilar/metrikler.json
+!ciktilar/sekiller/
+ciktilar/sekiller/*
+!ciktilar/sekiller/*.png
+
+# local school report drafts
+RAPOR-*.md
