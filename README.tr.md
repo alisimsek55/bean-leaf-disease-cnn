@@ -103,4 +103,4 @@ Testler (veri/GPU gerekmez): `pytest -q`.
 
 ## Nasıl yapıldı
 
-Yapay zekâ destekli geliştirmeyle (Claude Code) yapıldı.
+Bu projeyi yapay zekâ destekli geliştirmeyle, Claude Code'u eşli programlama aracı olarak kullanarak yaptım. Kapsamı ve gereksinimleri ders yönergesinden ben belirledim: sağlıklı yapraklardan ayrılacak iki hastalık, hazır bir model yerine sıfırdan tasarlanan bir ağ, %70/%30 eğitim/doğrulama bölmesi ve sağlıklı, az hastalıklı ve hastalıklı yaprakların gösterilmesi. Uygulamanın büyük kısmını bu yönlendirmeyle yapay zekâ yaptı. Sınırlılıklar dahil sonuçlar, çıktığı haliyle raporlanmıştır.
