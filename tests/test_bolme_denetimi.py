@@ -1,8 +1,6 @@
 """scripts/bolme_denetimi.py: capraz sizinti denetimi (sentetik + depodaki bolme CSV'leri)."""
 from pathlib import Path
 
-import pytest
-
 from test_gruplama import betik
 
 den = betik("bolme_denetimi")
@@ -50,19 +48,14 @@ def depodaki_rapor():
 
 
 def test_depodaki_bolmede_ortak_grup_ve_dosya_yok():
-    # xfail DEGIL: siradan grup/dosya sizintisi bilinen seri sizintisinin arkasina saklanmamali
+    # Siradan grup/dosya sizintisi seri denetiminden ayri raporlansin diye ayri bir test.
     rap = depodaki_rapor()
     assert rap["ortak_grup"] == 0, rap["ornek_ortak_grup"]
     assert rap["ortak_dosya"] == 0, rap["ornek_ortak_dosya"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="known leakage in the committed split (source A burst frames on both sides: 145 shared "
-           "capture-seconds); remove xfail after re-splitting with burst-aware groups and retraining",
-)
 def test_depodaki_bolmede_seri_sizintisi_yok():
+    # Bolme seri-farkinda gruplarla yeniden kuruldu; ilk bolmede 145 ortak cekim saniyesi vardi.
     rap = depodaki_rapor()
     assert rap["ortak_saniye"] == 0 and rap["capraz_seri"] == 0, (
         f"ortak cekim saniyesi={rap['ortak_saniye']}, iki tarafa bolunmus seri={rap['capraz_seri']}, "
