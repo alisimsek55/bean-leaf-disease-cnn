@@ -25,6 +25,7 @@ from torchvision.models import EfficientNet_B0_Weights, efficientnet_b0
 sys.path.insert(0, str(Path(__file__).parent))
 from ortak import CIKTI, SINIFLAR, TOHUM, tohum_ayarla, kaynak_kisa  # noqa: E402
 import veri  # noqa: E402
+from kontrol_noktasi import EnIyiTakip  # noqa: E402
 
 BOYUT = 224
 
@@ -60,7 +61,7 @@ def main():
     say = np.bincount(ye, minlength=3)
     kayip_f = nn.CrossEntropyLoss(weight=torch.tensor(len(ye) / (3 * say), dtype=torch.float32, device=cihaz))
     opt = torch.optim.AdamW(model.parameters(), lr=3e-4, weight_decay=1e-4)
-    en_iyi, en_iyi_ep, sabir, gecmis = 1e9, 0, 0, []
+    takip, gecmis = EnIyiTakip(tolerans=1e-4), []  # en iyi = kesin minimum; tolerans yalnız sabırda
     t0 = time.time()
     for ep in range(1, 41):
         model.train()
@@ -81,14 +82,11 @@ def main():
         p = torch.cat(olas).argmax(1).numpy()
         acc, mf1 = float((p == yd).mean()), float(f1_score(yd, p, average="macro"))
         gecmis.append({"epoch": ep, "dogrulama_kayip": dk, "dogrulama_dogruluk": acc, "dogrulama_makro_f1": mf1})
-        if dk < en_iyi - 1e-4:
-            en_iyi, en_iyi_ep, sabir = dk, ep, 0
+        if takip.guncelle(dk, ep):
             torch.save(model.state_dict(), kl / "model_en_iyi.pt")
             en_iyi_p = p.copy()
-        else:
-            sabir += 1
         yaz(f"Epoch {ep:2d} | doğrulama kayıp {dk:.4f} doğruluk {acc:.4f} makroF1 {mf1:.4f} | {time.time() - t0:.0f} sn")
-        if sabir >= 8:
+        if takip.sabir >= 8:
             yaz("Erken durdurma.")
             break
     p = en_iyi_p
@@ -100,7 +98,7 @@ def main():
         kb[f"{s} | kaynak {kaynak_kisa(k)}"] = {"n": int(len(g)), "dogruluk": float((g.y == g.p).mean())}
     sonuc = {"model": "EfficientNet-B0 (ImageNet ön eğitimli, tüm ağ ince ayar)", "giris": BOYUT,
              "parametre_sayisi": n_param, "egitim_suresi_sn": round(time.time() - t0, 1),
-             "calisan_epoch": len(gecmis), "en_iyi_epoch": en_iyi_ep,
+             "calisan_epoch": len(gecmis), "en_iyi_epoch": takip.en_iyi_epoch,
              "dogruluk": float((p == yd).mean()), "makro_f1": float(f1_score(yd, p, average="macro")),
              "sinif_bazinda": {s: {"kesinlik": float(pr[i]), "duyarlilik": float(re[i]), "f1": float(f1[i])}
                                for i, s in enumerate(SINIFLAR)},

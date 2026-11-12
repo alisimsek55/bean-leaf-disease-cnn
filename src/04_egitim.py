@@ -31,6 +31,7 @@ from sklearn.metrics import f1_score
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).parent))
+from kontrol_noktasi import EnIyiTakip  # noqa: E402
 from ortak import CIKTI, TOHUM, tohum_ayarla  # noqa: E402
 from veri import YaprakVeri, bolme_oku, etiketler, goruntuleri_yukle, kanal_istatistigi  # noqa: E402
 
@@ -88,7 +89,7 @@ def calistir(args):
     plan = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode="min", factor=0.5, patience=5)
 
     gecmis = []
-    en_iyi, en_iyi_epoch, sabir = float("inf"), 0, 0
+    takip = EnIyiTakip(tolerans=1e-4)  # en iyi = kesin minimum; tolerans yalnız erken durdurma sabrında
     t0 = time.time()
     for ep in range(1, args.epoch + 1):
         model.train()
@@ -119,20 +120,18 @@ def calistir(args):
         lr = opt.param_groups[0]["lr"]
         gecmis.append({"epoch": ep, "egitim_kayip": tk / tn, "egitim_dogruluk": td / tn,
                        "dogrulama_kayip": dk, "dogrulama_dogruluk": dacc, "dogrulama_makro_f1": dF1, "lr": lr})
-        iyi = dk < en_iyi - 1e-4
+        iyi = takip.guncelle(dk, ep)
         if iyi:
-            en_iyi, en_iyi_epoch, sabir = dk, ep, 0
             torch.save({"model": model.state_dict(), "ortalama": ort, "std": std, "epoch": ep,
                         "girdi": args.girdi, "gorev": args.gorev, "sinif_sayisi": sinif_sayisi},
                        klasor / "model_en_iyi.pt")
-        else:
-            sabir += 1
         yaz(f"Epoch {ep:3d} | eğitim kayıp {tk / tn:.4f} doğ. {td / tn:.4f} | doğrulama kayıp {dk:.4f} "
             f"doğ. {dacc:.4f} makroF1 {dF1:.4f} | lr {lr:.2e} | {time.time() - t0:.0f} sn{'  *' if iyi else ''}")
-        if sabir >= args.sabir:
+        if takip.sabir >= args.sabir:
             yaz(f"Erken durdurma: {args.sabir} epoch boyunca doğrulama kaybı iyileşmedi.")
             break
     sure = time.time() - t0
+    en_iyi, en_iyi_epoch = takip.en_iyi, takip.en_iyi_epoch
     ozet = {"ad": args.ad, "gorev": args.gorev, "girdi": args.girdi, "tohum": args.tohum, "haric_kaynak": args.haric_kaynak,
             "egitim_suresi_sn": round(sure, 1), "calisan_epoch": len(gecmis), "en_iyi_epoch": en_iyi_epoch,
             "en_iyi_dogrulama_kayip": en_iyi, "parametre_sayisi": n_param,

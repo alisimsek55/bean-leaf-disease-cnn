@@ -21,6 +21,16 @@ def bolme_oku(bolum: str) -> pd.DataFrame:
     return pd.read_csv(VERI / f"bolme_{bolum}.csv")
 
 
+def maske_uygula(rgb, m):
+    """Maske dışını tam siyah yapar (rgb [3,H,W], m [1,H,W] uint8 0/255).
+
+    Görüntü INTER_AREA, maske en yakın komşu ile boyutlandırıldığından maske kenarının hemen
+    dışında siyah olmayan pikseller kalabilir; eğitim ve değerlendirme aynı kuralı paylaşsın diye
+    iki yol da bu fonksiyonu normalizasyondan hemen önce çağırır.
+    """
+    return rgb * (m > 127)
+
+
 def goruntuleri_yukle(df: pd.DataFrame, girdi: str = "renkli", boyut: int = GIRIS_BOYUT):
     """Ön işlenmiş görüntüleri ve maskeleri belleğe yükler -> uint8 tensör [N,4,H,W] (RGB + maske).
 
@@ -67,9 +77,9 @@ class YaprakVeri(Dataset):
             rgb, m = x[:3], x[3:4]
             if self.renk is not None:
                 rgb = self.renk(rgb)
-            rgb = rgb * (m > 127)  # artırma sonrası arka planı yeniden tam siyah yap
         else:
-            rgb = x[:3]
+            rgb, m = x[:3], x[3:4]
+        rgb = maske_uygula(rgb, m)  # arka planı (artırma sonrası da) tam siyah yap; iki yol aynı
         rgb = rgb.float() / 255.0
         return (rgb - self.ort) / self.std, self.y[i]
 

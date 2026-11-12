@@ -266,11 +266,25 @@ def sekil_gradcam(df, X, y, p, olas, camler):
     plt.close(fig)
 
 
+def dogru_yanlis_sec(y, p, rng, sinif_basina=2, yanlis_sayi=6):
+    """Her sınıftan en çok `sinif_basina` doğru ve toplam en çok `yanlis_sayi` yanlış örnek indeksi seçer.
+
+    Zayıf modelde bir sınıfta hiç/az doğru örnek olabilir: o sınıftan bulunduğu kadar alınır
+    (hiç yoksa atlanır), çağıran taraf boş kalan panelleri boş bırakır.
+    """
+    dogru = []
+    for c in range(3):
+        aday = np.where((y == c) & (p == c))[0]
+        if len(aday):
+            dogru += list(rng.choice(aday, min(sinif_basina, len(aday)), replace=False))
+    yanlis_tum = np.where(y != p)[0]
+    yanlis = list(rng.choice(yanlis_tum, min(yanlis_sayi, len(yanlis_tum)), replace=False)) if len(yanlis_tum) else []
+    return dogru, yanlis
+
+
 def sekil_dogru_yanlis(df, X, y, p, olas):
     rng = np.random.default_rng(TOHUM + 1)
-    dogru = [i for c in range(3) for i in rng.choice(np.where((y == c) & (p == c))[0], 2, replace=False)]
-    yanlis_tum = np.where(y != p)[0]
-    yanlis = list(rng.choice(yanlis_tum, min(6, len(yanlis_tum)), replace=False))
+    dogru, yanlis = dogru_yanlis_sec(y, p, rng)
     fig, eks = plt.subplots(2, 6, figsize=(14, 6.8))
     for a in eks.ravel():
         a.axis("off")
