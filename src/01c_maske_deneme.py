@@ -26,6 +26,9 @@ tuval = Image.new("RGB", (8 * K, int(np.ceil(len(sec) / 8)) * K))
 for i, r in enumerate(sec.itertuples()):
     rgb = on.goruntu_oku(VERI / r.dosya)
     g, _ = on.kirp_ve_boyutlandir(rgb, fn(rgb))
+    if g is None:  # yaprak bulunamadı (boş maske): kutu siyah kalır
+        print(f"yaprak yok, atlandı: {r.dosya}")
+        continue
     tuval.paste(Image.fromarray(g).resize((K, K)), ((i % 8) * K, (i // 8) * K))
 tuval.save(CIKTI / "maske_kontrol" / f"deneme_{kaynak}.png")
 print("ok")

@@ -40,6 +40,7 @@ from ortak import HAM, ISLENMIS, SINIFLAR, VERI, KAYDET_BOYUT, tohum_ayarla  # n
 MAKS_KENAR = 1024          # hız için maske hesaplamadan önce uzun kenar bu boyuta küçültülür
 KIRPMA_PAYI = 0.04         # sınır kutusuna eklenen pay (kutu kenarının oranı)
 KUCUK_DELIK_ORANI = 0.01   # B/C'de doldurulacak deliklerin yaprak alanına göre üst sınırı
+MIN_YAPRAK_PIKSEL = 50     # bundan az maske pikseli = "yaprak bulunamadı" (görüntü dışlanır)
 
 
 def goruntu_oku(yol: Path) -> np.ndarray:
@@ -143,6 +144,8 @@ def maske_siyah_zemin(rgb):
     gc[(v < 0.5 * t) | (kenar_cercevesi(v.shape) == 1)] = cv2.GC_BGD
     if (gc == cv2.GC_FGD).sum() < 50:  # renkli çekirdek yoksa yalnız parlaklıkla
         gc[parlak == 1] = cv2.GC_FGD
+    if not ((gc == cv2.GC_FGD) | (gc == cv2.GC_PR_FGD)).any():  # yaprak tohumu yok: GrabCut çöker
+        return np.zeros((H, W), np.uint8)
     bgd, fgd = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
     try:
         cv2.grabCut(cv2.cvtColor(kucuk, cv2.COLOR_RGB2BGR), gc, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
@@ -169,9 +172,14 @@ def maske_kart_zemin(rgb):
     gc[genis == 1] = cv2.GC_PR_BGD
     gc[cekirdek == 1] = cv2.GC_PR_FGD
     gc[dar == 1] = cv2.GC_FGD
+    if cekirdek.sum() == 0:  # yaprak tohumu yok: GrabCut çöker, "yaprak yok" (boş maske) döndür
+        return np.zeros(cekirdek.shape, np.uint8)
     bgd, fgd = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
-    cv2.grabCut(cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), gc, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
-    m = ((gc == cv2.GC_FGD) | (gc == cv2.GC_PR_FGD)).astype(np.uint8)
+    try:
+        cv2.grabCut(cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), gc, None, bgd, fgd, 5, cv2.GC_INIT_WITH_MASK)
+        m = ((gc == cv2.GC_FGD) | (gc == cv2.GC_PR_FGD)).astype(np.uint8)
+    except cv2.error:  # örn. hiç zemin tohumu kalmadıysa çekirdek maskesine dön
+        m = cekirdek.copy()
     # Yaprakçıklar arasında kalan beyaz/gri kart karelerini çıkar (renksiz ve parlak pikseller)
     chroma, L = renk_doygunlugu_lab(rgb)
     m[(chroma < 8) & (L > 90)] = 0
@@ -181,10 +189,14 @@ def maske_kart_zemin(rgb):
 
 
 def kirp_ve_boyutlandir(rgb, m):
-    """Arka planı siyaha boyar, sınır kutusuna (pay ile) kırpar, kare yapar, KAYDET_BOYUT'a getirir."""
+    """Arka planı siyaha boyar, sınır kutusuna (pay ile) kırpar, kare yapar, KAYDET_BOYUT'a getirir.
+
+    Maske boşsa (yaprak yok) (None, None) döndürür; çağıran görüntüyü kaydetmeyip dışlamalıdır."""
     rgb = rgb.copy()
     rgb[m == 0] = 0
     ys, xs = np.where(m > 0)
+    if ys.size == 0:
+        return None, None
     y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
     bh, bw = y1 - y0, x1 - x0
     kenar = int(max(bh, bw) * (1 + 2 * KIRPMA_PAYI))
@@ -226,9 +238,21 @@ def main():
             yontem, m = "kart_grabcut", maske_kart_zemin(rgb)
 
         H, W = m.shape
+        kont = []
+        if int((m > 0).sum()) >= MIN_YAPRAK_PIKSEL:
+            kont, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not kont:
+            # Yaprak bulunamadı (boş/çok küçük maske): çökmek yerine kaydet ve dışla (aşağıda dislandi=True)
+            print(f"  UYARI: yaprak bulunamadı, dışlanıyor: {r['dosya']}", flush=True)
+            kayitlar.append({
+                "dosya": r["dosya"], "islenmis": "", "maske": "",
+                "sinif": r["sinif"], "kaynak": r["kaynak"], "grup": r["grup"], "yontem": yontem,
+                "alan_orani": 0.0, "solidity": 0.0, "kenar_orani": 0.0, "ort_chroma": 0.0,
+                "bayraklar": "yaprak_yok",
+            })
+            continue
         alan_orani = float(m.mean())
         # Kalite göstergeleri: alan oranı, dışbükey örtüye oranı (solidity), kenara değme
-        kont, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         c = max(kont, key=cv2.contourArea)
         solidity = float(cv2.contourArea(c) / max(cv2.contourArea(cv2.convexHull(c)), 1))
         kenar_piksel = int(m[0, :].sum() + m[-1, :].sum() + m[:, 0].sum() + m[:, -1].sum())
@@ -268,7 +292,8 @@ def main():
     # Elle yapılan görsel denetimde kötü maskelendiği belirlenen dosyalar (varsa) dışlanır
     dis = VERI / "islenmis_dislanan.csv"
     # Otomatik dışlama kuralı: renksiz_maske bayrağı (yaprak yerine kumaş seçilmiş)
-    rap["dislandi"] = rap["bayraklar"].str.contains("renksiz_maske")
+    # ve yaprak_yok bayrağı (maske boş: yaprak bulunamadı, görüntü kaydedilmedi)
+    rap["dislandi"] = rap["bayraklar"].str.contains("renksiz_maske|yaprak_yok")
     if dis.exists():
         d = pd.read_csv(dis)
         rap.loc[rap["dosya"].isin(d["dosya"]), "dislandi"] = True  # elle denetimde kötü bulunanlar

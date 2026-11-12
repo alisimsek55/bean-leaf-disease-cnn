@@ -32,3 +32,24 @@ def test_zemin_siyaha_donusur_ve_kirpilir():
     assert g[gm == 0].max() == 0                      # maske disi tamamen siyah
     assert not (g == 255).all(axis=-1).any()         # beyaz zemin kalmadi
     assert g[on.KAYDET_BOYUT // 2, on.KAYDET_BOYUT // 2].tolist() == [40, 150, 40]
+
+def test_tamamen_beyaz_goruntu_cokmez():
+    rgb = np.full((300, 300, 3), 255, np.uint8)
+    for f in (on.maske_beyaz_zemin, on.maske_kart_zemin):  # beyaz = bu yontemlerde zemin
+        m = f(rgb)
+        assert m.shape == (300, 300) and m.sum() == 0
+    assert on.maske_siyah_zemin(rgb).shape == (300, 300)  # parlak = yaprak sayilir ama cokmez
+
+
+def test_tamamen_siyah_goruntu_cokmez():
+    rgb = np.zeros((300, 300, 3), np.uint8)
+    for f in (on.maske_siyah_zemin, on.maske_kart_zemin):  # siyah = bu yontemlerde zemin
+        m = f(rgb)
+        assert m.shape == (300, 300) and m.sum() == 0
+    assert on.maske_beyaz_zemin(rgb).shape == (300, 300)
+
+
+def test_bos_maske_kirpmada_yaprak_yok_sonucu_verir():
+    rgb = np.full((100, 120, 3), 7, np.uint8)
+    g, gm = on.kirp_ve_boyutlandir(rgb, np.zeros((100, 120), np.uint8))
+    assert g is None and gm is None

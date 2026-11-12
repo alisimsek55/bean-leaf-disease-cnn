@@ -38,9 +38,24 @@ def sayfa(df, ad):
     df.reset_index(drop=True)[["dosya", "sinif", "kaynak", "bayraklar"]].to_csv(klasor / f"{ad}.csv")
 
 
+def goruntulu_satirlar(rap):
+    """Raporu (gösterilebilir, görüntüsüz) olarak ikiye ayırır. Görüntüsüz: `islenmis`/`maske` yolu
+    boş/NaN olan satırlar (ör. `yaprak_yok`: yaprak bulunamadı, diske görüntü yazılmadı); bunlar temas
+    sayfasına konamaz. Elle/renksiz_maske ile dışlananların görüntüsü diskte durduğu için gösterilir."""
+    yol_var = pd.Series(True, index=rap.index)
+    for sutun in ("islenmis", "maske"):
+        yol_var &= rap[sutun].notna() & (rap[sutun].astype(str).str.strip() != "")
+    return rap[yol_var], rap[~yol_var]
+
+
 def main():
     mod = sys.argv[1] if len(sys.argv) > 1 else "rastgele"
     rap = pd.read_csv(ISLENMIS / "on_isleme_raporu.csv").fillna({"bayraklar": ""})
+    rap, goruntusuz = goruntulu_satirlar(rap)
+    if len(goruntusuz):
+        print(f"Görüntüsü olmayan (yaprak_yok vb.) {len(goruntusuz)} satır atlandı:")
+        for r in goruntusuz.itertuples():
+            print(f"  {r.dosya}  [{r.bayraklar}]")
     if mod == "rastgele":
         for (s, k), d in rap.groupby(["sinif", "kaynak"]):
             sayfa(d.sample(min(len(d), 32), random_state=TOHUM), f"rastgele_{s}_{k}")
