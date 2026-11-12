@@ -30,11 +30,11 @@ CC BY-NC 4.0 gereği atıf + ticari olmayan kullanım.
 
 `data\raw\` (hedef üç sınıf):
 
-| Sınıf klasörü | Kaynak A (ykvcrjffzd) | Kaynak B (3km9d246z2) | Kaynak C (Embrapa) | **Toplam** | Yakın-kopya grubu sayısı* |
-|---|---|---|---|---|---|
-| `adi_yaprak_yanikligi` | 508 (`Bean/Blight`) | – | 25 | **533** | 532 |
-| `hale_yanikligi` | – | 231 (`halo_blight`) | – | **231** | 146 |
-| `saglikli` | 549 (`Bean/Fresh Leaf`) | 1145 (`healthy_leaves`) | 2 | **1696** | 936 |
+| Sınıf klasörü | Kaynak A (ykvcrjffzd) | Kaynak B (3km9d246z2) | Kaynak C (Embrapa) | **Toplam** | Grup sayısı: yalnız dHash* | Grup sayısı: dHash + seri* |
+|---|---|---|---|---|---|---|
+| `adi_yaprak_yanikligi` | 508 (`Bean/Blight`) | – | 25 | **533** | 532 | 78 |
+| `hale_yanikligi` | – | 231 (`halo_blight`) | – | **231** | 146 | 146 |
+| `saglikli` | 549 (`Bean/Fresh Leaf`) | 1145 (`healthy_leaves`) | 2 | **1696** | 936 | 444 |
 
 `data\raw_ek\` (kaynak B'den gelen, işe yarayabilecek ek sınıflar; hedef sınıflara karıştırılmadı):
 
@@ -48,10 +48,12 @@ CC BY-NC 4.0 gereği atıf + ticari olmayan kullanım.
 
 \* Bkz. §4: aynı yaprağın neredeyse aynı çekimleri tek "grup" sayıldı. Kaynak B'deki görüntülerin önemli kısmı
 aynı yaprağın çok benzer kareleridir; **gerçek bağımsız örnek sayısı grup sayısına yakındır.** Tablodaki
-sayılar yalnızca dHash gruplarıdır ve kaynak A'da bağımsız yaprak sayısını çok abartır: A'nın seri çekim
-kareleri dHash eşiğini çoğu zaman aştığı için neredeyse her kare ayrı grup sayıldı (A'da 1 057 görüntü, 1 056
-dHash grubu). dHash gruplarını seri çekim penceresiyle (§4) birleştirince A'da 110 grup kalıyor (CBB 53,
-sağlıklı 57; 100'ü 10 karelik seri); `raw` içindeki CBB 532 → 78, sağlıklı 936 → 444 gruba iniyor.
+"yalnız dHash" sütunu kaynak A'da bağımsız yaprak sayısını çok abartır: A'nın seri çekim kareleri dHash eşiğini
+çoğu zaman aştığı için neredeyse her kare ayrı grup sayılır (A'da 1 057 görüntü, 1 056 dHash grubu). dHash
+gruplarını seri çekim penceresiyle (§4) birleştirince A'da 110 grup kalıyor (CBB 53, sağlıklı 57; 100'ü 10
+karelik seri); `raw` içindeki CBB 532 → 78, sağlıklı 936 → 444 gruba iniyor. `data\etiketler.csv`'deki `grup`
+sütunu ikinci (dHash + seri) gruplamadır; `raw` içinde toplam 668 grup. `raw_ek` sınıflarında (kaynak B, zaman
+damgası yok) iki gruplama aynıdır.
 
 **Şiddet (severity) etiketi:** Hiçbir kullanılabilir kaynakta yaprak düzeyinde şiddet etiketi bulunamadı.
 `data\raw_siddet\` oluşturulmadı. (Hocanın "az hastalıklı" isteği için: hastalıklı sınıflarda hafif → ağır
@@ -90,14 +92,17 @@ Betik: `scripts\duzenle.py` (rapor: `data\temizlik_raporu.json`).
   zaman damgası taşıyor (`bdcp__IMG_20240105_235312_641.jpg` = tarih, saat-dakika-saniye, milisaniye) ve
   yapraklar çoğunlukla 10'ar karelik seriler hâlinde çekilmiş; aynı serinin kareleri çoğu zaman Hamming ≤ 20
   eşiğini aşıyor ve ayrı gruplara düştü. Aynı sınıf içinde zamana göre sıralanınca ardışık iki kare arasındaki
-  fark ya 0–1 sn ya da en az 10 sn; arada değer yok, bu yüzden 2 sn'lik pencere serileri ayırmak için güvenli. Depodaki bölme bu eski gruplarla yapıldığı için ortak grup sayısı 0 olmasına
-  rağmen sızıntı var: `scripts/bolme_denetimi.py` 145 çekim saniyesini hem eğitimde hem doğrulamada buldu;
-  kaynak A'nın 314 doğrulama görüntüsünden 299'unun (738'lik doğrulama kümesinin %40,5'i) eğitimde aynı
-  saniyeden bir eşi var. `yakin_kopya.py` artık aynı kaynak + sınıfta zaman damgaları arasında en çok 2 sn olan
+  fark ya 0–1 sn ya da en az 10 sn; arada değer yok, bu yüzden 2 sn'lik pencere serileri ayırmak için güvenli. İlk
+  bölme yalnızca dHash gruplarıyla yapıldığı için ortak grup sayısı 0 olmasına rağmen sızıntılıydı:
+  `scripts/bolme_denetimi.py` 145 çekim saniyesini hem eğitimde hem doğrulamada buldu; kaynak A'nın 314 doğrulama
+  görüntüsünden 299'unun (o 738'lik doğrulama kümesinin %40,5'i) eğitimde aynı saniyeden bir eşi vardı.
+  `yakin_kopya.py` artık aynı kaynak + sınıfta zaman damgaları arasında en çok 2 sn olan
   kareleri de (zincirleme) aynı gruba birleştiriyor; zaman damgası olmayan adlarda (B: `Good_Leaf_671.png`,
   C: `DSC_0629.jpg`; bu sayılar sıra numarasıdır, çekim zamanı değil) yalnızca dHash kullanılıyor. C'deki iki
-  sağlıklı karenin elle birleştirilmesi de artık betikte (`ELLE_BIRLESTIR`). Depodaki `etiketler.csv` ve
-  `bolme_*.csv` henüz yeniden üretilmedi.
+  sağlıklı karenin elle birleştirilmesi de artık betikte (`ELLE_BIRLESTIR`). Depodaki `etiketler.csv` bu
+  gruplamayla yeniden üretildi (seri bağlantısı 946, grup sayısı tüm 3 580 dosyada 1 884 → 938) ve
+  `bolme_*.csv` bu gruplarla yeniden kuruldu: 1 716 eğitim / 735 doğrulama; denetim ortak grup, dosya, çekim
+  saniyesi ya da seri bulmuyor. Tüm modeller yeni bölmede yeniden eğitildi (sonuçlar: `RESULTS.tr.md`).
 
 `data\etiketler.csv` sütunları: `dosya, sinif, kume(raw|raw_ek), kaynak, kaynak_yol, kaynak_url, lisans,
 sha256, bicim, mod, genislik, yukseklik, grup`.
@@ -153,7 +158,7 @@ hale_yanikligi 8 + 12 (+ ön incelemede 3 tam çözünürlük), saglikli 8 (A+B 
    getirip **arka planı maskelemek/nötr renge çevirmek**; (b) sonuçları **kaynak bazında** raporlamak; (c)
    Embrapa CBB görüntülerini (farklı arka plan, gerçek *P. vulgaris*) ayrı bir dış test olarak kullanmak;
    (d) Grad-CAM ile modelin lekeye mi zemine mi baktığını göstermek.
-2. **Hale yanıklığı etiket güvenilirliği düşük** (§5). Ayrıca bağımsız örnek sayısı az: 231 görüntü ama ~146
+2. **Hale yanıklığı etiket güvenilirliği düşük** (§5). Ayrıca bağımsız örnek sayısı az: 231 görüntü ama 146
    yakın-kopya grubu.
 3. **Sınıf dengesizliği:** saglikli 1696 / CBB 533 / hale 231. Sınıf ağırlığı ya da örnekleme gerekir; sağlıklı
    sınıfı alt-örneklemek de bir seçenek.
