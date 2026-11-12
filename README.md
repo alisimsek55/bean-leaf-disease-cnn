@@ -4,7 +4,7 @@
 
 [Türkçe](README.tr.md)
 
-A 16-layer convolutional neural network, designed and trained from scratch in PyTorch, that classifies bean leaf photos as common bacterial blight (CBB), halo blight, or healthy. It was built as a university "AI in Agriculture" course project. It reaches 97.6% validation accuracy. The more interesting part of the repository is what happened after that number came out: I tested how much of it reflects disease recognition and how much reflects dataset artifacts, and the answer is "less than the headline suggests".
+A 16-layer convolutional neural network, designed and trained from scratch in PyTorch, that classifies bean leaf photos as common bacterial blight (CBB), halo blight, or healthy. It was built as a university "AI in Agriculture" course project. It reaches 97.6% validation accuracy, an upper bound because the committed split leaks burst frames between train and validation (see [Results](#results)). The more interesting part of the repository is what happened after that number came out: I tested how much of it reflects disease recognition and how much reflects dataset artifacts, and the answer is "less than the headline suggests".
 
 ![Leaves before and after preprocessing: raw image, leaf mask, background painted black and cropped](ciktilar/sekiller/on_isleme_oncesi_sonrasi.png)
 
@@ -12,7 +12,9 @@ A 16-layer convolutional neural network, designed and trained from scratch in Py
 
 ## Results
 
-Validation set, n = 738 images (grouped 70/30 split, no near-duplicate leakage). Source: [`ciktilar/metrikler.json`](ciktilar/metrikler.json).
+Validation set, n = 738 images (70/30 split grouped by dHash near-duplicate groups). Source: [`ciktilar/metrikler.json`](ciktilar/metrikler.json).
+
+> **Known leakage in this split.** The train and validation sets share no near-duplicate group, but a later audit ([`scripts/bolme_denetimi.py`](scripts/bolme_denetimi.py)) found that burst frames from source A were split across them: 145 capture-seconds appear on both sides, and 299 of the 314 source-A validation images (40.5% of the 738-image validation set) have a frame from the same second in training. The numbers below, 97.56% accuracy and 95.5% macro F1, are therefore optimistic and should be read as an upper bound until the split is rebuilt with burst-aware grouping and the models are retrained (planned). See [Limitations](#limitations).
 
 | Metric | Value |
 |---|---|
@@ -46,7 +48,7 @@ Almost every class comes from a different data source with a different backgroun
 
 ![Grad-CAM examples per class](ciktilar/sekiller/gradcam_ornekleri.png)
 
-**Conclusion.** Distinguishing diseased from healthy leaves within the same source looks real: no near-duplicate leakage, the background is removed, the silhouette is not enough, and the model attends to lesions. For healthy leaves, 100% of source A and 95.1% of source B were classified correctly, and the errors (17, all source B) went toward halo blight. The CBB vs halo blight distinction cannot be shown to come from the disease, because class and source overlap almost completely, and the one-in-five result on unseen-source CBB leaves says the 97.6% is an in-distribution (same sources) figure. Treat it as an upper bound.
+**Conclusion.** Distinguishing diseased from healthy leaves within the same source looks plausible: the background is removed, the silhouette is not enough, and the model attends to lesions. But the split is not leak-free: in source A, burst frames of the same leaf ended up on both sides (299 of 314 source-A validation images have a same-second sibling in training), so the source-A results are inflated by an unknown amount. Sources B and C have no capture timestamps in their file names, so for them only the dHash grouping applies and burst leakage can be neither detected nor ruled out by the audit. For healthy leaves, 100% of source A and 95.1% of source B were classified correctly, and the errors (17, all source B) went toward halo blight. The CBB vs halo blight distinction cannot be shown to come from the disease, because class and source overlap almost completely, and the one-in-five result on unseen-source CBB leaves says the 97.6% is an in-distribution (same sources) figure. Treat it as an upper bound.
 
 An optional ImageNet-pretrained EfficientNet-B0 (fine-tuned, 4,011,391 parameters) reached 100% validation accuracy. The same source overlap applies, so this is not evidence of disease recognition either. The unseen-source test was not run for it.
 
@@ -79,7 +81,7 @@ Many images are near-identical frames of the same leaf; the 231 halo blight imag
 
 ### Split
 
-[`src/02_veri_bolme.py`](src/02_veri_bolme.py). 70% train / 30% validation, grouped by near-duplicate group (256-bit dHash, Hamming distance <= 20), so frames of the same leaf never land on both sides (checked: 0 shared groups), and stratified by (class, source). No samples were discarded to balance classes.
+[`src/02_veri_bolme.py`](src/02_veri_bolme.py). 70% train / 30% validation, grouped by near-duplicate group (256-bit dHash, Hamming distance <= 20) and stratified by (class, source). No samples were discarded to balance classes. The committed split has 0 shared groups, but that did not prevent leakage: consecutive burst frames of the same leaf in source A often differ by more than the dHash threshold and got groups of their own. The audit [`scripts/bolme_denetimi.py`](scripts/bolme_denetimi.py) found 145 capture-seconds (file names `IMG_<date>_<time>_<ms>`) on both sides, covering 299 of the 314 source-A validation images (40.5% of the validation set); with a 2-second burst window, 312 of 314 are affected. [`scripts/yakin_kopya.py`](scripts/yakin_kopya.py) now also merges source-A frames whose timestamps are at most 2 seconds apart (same source and class) into one group; the committed split and the reported models predate this fix and have not been rebuilt yet.
 
 ### Model
 
@@ -117,7 +119,7 @@ It ran 50 epochs; the best epoch was 35 (validation loss 0.0627). Class-weighted
 
 ### Severity estimate
 
-[`src/06_siddet_tahmini.py`](src/06_siddet_tahmini.py). **This is a rule-based estimate, not an expert label**; the datasets have no severity annotation. Within the eroded leaf mask, a pixel counts as lesion if it is reddish/brown (Lab a* - 128 > 4), yellow-orange (H < 27 and S > 60), or very dark (V < 45). The lesion ratio is split by two thresholds chosen by looking at the data: T1 = 0.5% (about the 99th percentile of healthy leaves) and T2 = 13% (median of the CBB and halo classes). Below T1 is "healthy", between them "mildly diseased", above T2 "diseased".
+[`src/06_siddet_tahmini.py`](src/06_siddet_tahmini.py). **This is a rule-based estimate, not an expert label**; the datasets have no severity annotation. Within the eroded leaf mask, a pixel counts as lesion if it is reddish/brown (Lab a* - 128 > 4), yellow-orange (H < 27 and S > 60), or very dark (V < 45). The lesion ratio is split by two thresholds chosen by looking at the data: T1 = 0.5% (about the 99th percentile of healthy leaves) and T2 = 13% (median of the CBB and halo classes). Below T1 is "healthy", from T1 up to (not including) T2 "mildly diseased", at or above T2 "diseased".
 
 Counts over the 2,451 images: healthy 1,716, mildly diseased 347, diseased 388. The measure depends on source (median lesion ratio: CBB source A 19.1%, CBB source C 1.9%), misses the diffuse chlorosis in Embrapa leaves, and finds no clear lesion in 41 of the 231 halo images (18%). Reflections, stems and edge shadows can produce false positives.
 
@@ -126,19 +128,21 @@ Counts over the 2,451 images: healthy 1,716, mildly diseased 347, diseased 388. 
 ## Limitations
 
 1. **Source-class confound (the main one).** Halo = 100% source B, CBB = 95% source A. Source is predictable at 100% even after masking, so the CBB/halo split cannot be attributed to disease. Unseen-source CBB accuracy is 20%.
-2. **Low confidence in the halo blight labels.** In a visual spot check during data preparation (a sample of images, not a measured rate), only about 20-30% of the halo folder looked like typical halo blight; most resembled CBB (large brown edge necrosis). No pathogen verification or methods paper was found for source B. Labels were left unchanged.
-3. **Species uncertainty.** The "bean" leaves in sources A and B may not be *Phaseolus vulgaris*; only source C is confirmed.
-4. **No separate test set**, a single seed and a single split; the validation accuracy fluctuated between 85% and 99% across epochs and variance was not measured.
-5. **Few independent samples.** Halo blight has 231 images but 146 distinct leaves (44 groups in validation).
-6. **Imperfect masking.** 9 images excluded; residual card fragments and cloth remain.
-7. **The severity measure is rule-based**, source-dependent and not validated against experts.
-8. **Grad-CAM is coarse** (8x8), and 32-45% of its weight falls outside the leaf.
-9. **The Embrapa test is tiny:** 25 CBB images plus 2 healthy frames of the same leaf.
+2. **Burst-frame leakage in the committed split.** The dHash grouping kept every near-duplicate group on one side, but it did not catch burst frames of the same leaf: in source A, 145 capture-seconds are shared between train and validation, and 299 of the 314 source-A validation images (40.5% of all 738) have a same-second sibling in training (312 of 314 with a 2-second burst window). The reported 97.56% accuracy and 95.5% macro F1 are therefore optimistic, especially for source A, and should be read as upper bounds; the control runs and EfficientNet-B0 used the same split and are affected the same way. The grouping is now burst-aware and [`scripts/bolme_denetimi.py`](scripts/bolme_denetimi.py) checks for this; rebuilding the split and retraining is planned but not done. Sources B and C have no timestamps in their file names, so burst leakage there can be neither detected nor ruled out.
+3. **Low confidence in the halo blight labels.** In a visual spot check during data preparation (a sample of images, not a measured rate), only about 20-30% of the halo folder looked like typical halo blight; most resembled CBB (large brown edge necrosis). No pathogen verification or methods paper was found for source B. Labels were left unchanged.
+4. **Species uncertainty.** The "bean" leaves in sources A and B may not be *Phaseolus vulgaris*; only source C is confirmed.
+5. **No separate test set**, a single seed and a single split; the validation accuracy fluctuated between 85% and 99% across epochs and variance was not measured.
+6. **Few independent samples.** Halo blight has 231 images but 146 distinct leaves (44 groups in validation). Source A has 1,057 images, but combining the dHash groups with the 2-second burst window leaves only 110 groups (100 of them are bursts of 10 frames).
+7. **Imperfect masking.** 9 images excluded; residual card fragments and cloth remain.
+8. **The severity measure is rule-based**, source-dependent and not validated against experts.
+9. **Grad-CAM is coarse** (8x8), and 32-45% of its weight falls outside the leaf.
+10. **The Embrapa test is tiny:** 25 CBB images plus 2 healthy frames of the same leaf.
 
 Not done: expert severity labels, multiple seeds or cross-validation, the unseen-source test for EfficientNet-B0, and a full end-to-end run of `calistir.ps1` (the scripts were run one by one in the same order).
 
 ## What I would do next
 
+- Rebuild the split with the burst-aware groups, check it with `scripts/bolme_denetimi.py`, retrain all models and replace the reported numbers.
 - Collect CBB and halo blight images from several sources per class, so that source and disease are no longer the same variable, and evaluate with leave-one-source-out.
 - Get the halo blight labels reviewed by a plant pathologist, or replace that class with a verified one.
 - Run the unseen-source test for every model, including the pretrained one, and report variance over several seeds.
@@ -146,6 +150,18 @@ Not done: expert severity labels, multiple seeds or cross-validation, the unseen
 - Use a higher-resolution CAM method and calibrate the severity rule against expert scores.
 
 ## Reproduce
+
+### Changes since the reported run
+
+Code fixes were made after the run that produced the reported numbers, so a fresh run will not reproduce them bit-for-bit:
+
+1. Evaluation now re-applies the leaf mask after resizing, the same way training does.
+2. The best checkpoint is now the true minimum validation loss (previously a new best required an improvement greater than 1e-4).
+3. Grouping in [`scripts/yakin_kopya.py`](scripts/yakin_kopya.py) is now burst-aware (source-A frames at most 2 seconds apart share a group), so re-running it and `src/02_veri_bolme.py` produces a different split from the committed `data/bolme_*.csv`.
+
+The numbers in [`ciktilar/metrikler.json`](ciktilar/metrikler.json) and in this README are from the original run and are kept unchanged.
+
+### Setup
 
 Python 3.13. The pinned [`requirements.txt`](requirements.txt) is a `pip freeze` of the environment used (CUDA 12.8 wheels of PyTorch). For a CPU-only setup, install `torch`/`torchvision` from `https://download.pytorch.org/whl/cpu` and the remaining packages by hand; [`requirements-ci.txt`](requirements-ci.txt) lists what the tests need.
 
@@ -162,7 +178,7 @@ python -I scripts/indir.py . mendeley_ykvcrjffzd
 python -I scripts/indir.py . mendeley_3km9d246z2
 python -I scripts/indir.py . embrapa_pddb
 python -I scripts/duzenle.py .        # verify, de-duplicate, build data/raw and data/etiketler.csv
-python -I scripts/yakin_kopya.py .    # near-duplicate groups (the `grup` column)
+python -I scripts/yakin_kopya.py .    # near-duplicate + burst groups (the `grup` column)
 ```
 
 Pipeline order (or run `calistir.ps1`, which does the same; add `-EkModel` for EfficientNet-B0):
@@ -170,6 +186,7 @@ Pipeline order (or run `calistir.ps1`, which does the same; add `-EkModel` for E
 ```powershell
 python src/01_on_isleme.py
 python src/02_veri_bolme.py
+python -I scripts/bolme_denetimi.py .                     # leakage audit of the split (exit code 1 if leakage)
 python src/04_egitim.py                                   # main model
 python src/04_egitim.py --girdi siluet --ad siluet        # control: silhouette only
 python src/04_egitim.py --gorev kaynak --ad kaynak        # control: source prediction
@@ -183,7 +200,7 @@ If the project path is very long, Windows may fail to load some DLLs ("file name
 
 Hardware used: NVIDIA RTX 4070 Laptop GPU (8 GB), PyTorch 2.11.0+cu128. The main model trained in 1,009 s (while two control runs shared the GPU). Preprocessing time was not recorded. The seed is 42 and cuDNN is deterministic, so results should reproduce on the same hardware and library versions; small differences are possible elsewhere. The trained weights are not included.
 
-Tests (no data or GPU needed): `pip install -r requirements-ci.txt` plus PyTorch, then `pytest -q`. They check the model's output shape and parameter count (1,772,995), the severity function and its thresholds, the grouped split, and background masking on synthetic images.
+Tests (no data or GPU needed): `pip install -r requirements-ci.txt` plus PyTorch, then `pytest -q`. They check the model's output shape and parameter count (1,772,995), the severity function and its thresholds, the grouped split, burst-aware grouping, the leakage audit, and background masking on synthetic images. One test runs the audit on the committed split and is marked as an expected failure (`xfail`) because of the known burst leakage; it is to be un-marked once the split is rebuilt.
 
 ## Data sources and licenses
 

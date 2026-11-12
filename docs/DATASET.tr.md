@@ -47,7 +47,11 @@ CC BY-NC 4.0 gereği atıf + ticari olmayan kullanım.
 | `cercospora_yaprak_lekesi` | cercospora_leaf_spot | 86 | 18 |
 
 \* Bkz. §4: aynı yaprağın neredeyse aynı çekimleri tek "grup" sayıldı. Kaynak B'deki görüntülerin önemli kısmı
-aynı yaprağın çok benzer kareleridir; **gerçek bağımsız örnek sayısı grup sayısına yakındır.**
+aynı yaprağın çok benzer kareleridir; **gerçek bağımsız örnek sayısı grup sayısına yakındır.** Tablodaki
+sayılar yalnızca dHash gruplarıdır ve kaynak A'da bağımsız yaprak sayısını çok abartır: A'nın seri çekim
+kareleri dHash eşiğini çoğu zaman aştığı için neredeyse her kare ayrı grup sayıldı (A'da 1 057 görüntü, 1 056
+dHash grubu). dHash gruplarını seri çekim penceresiyle (§4) birleştirince A'da 110 grup kalıyor (CBB 53,
+sağlıklı 57; 100'ü 10 karelik seri); `raw` içindeki CBB 532 → 78, sağlıklı 936 → 444 gruba iniyor.
 
 **Şiddet (severity) etiketi:** Hiçbir kullanılabilir kaynakta yaprak düzeyinde şiddet etiketi bulunamadı.
 `data\raw_siddet\` oluşturulmadı. (Hocanın "az hastalıklı" isteği için: hastalıklı sınıflarda hafif → ağır
@@ -82,6 +86,18 @@ Betik: `scripts\duzenle.py` (rapor: `data\temizlik_raporu.json`).
   çekilmiş kareleri. C'deki iki sağlıklı görüntü de aynı yaprağın iki karesi olduğu için elle aynı gruba alındı.
   **Bu dosyalar silinmedi** (veri az); bunun yerine eğitim/doğrulama/test bölmesi **`grup` sütununa göre
   yapılmalı** (ör. `GroupShuffleSplit` / `StratifiedGroupKFold`), aksi halde test başarımı şişer.
+- **Sonradan bulunan eksik: seri çekim kareleri.** dHash tek başına yetmedi. Kaynak A'nın dosya adları kamera
+  zaman damgası taşıyor (`bdcp__IMG_20240105_235312_641.jpg` = tarih, saat-dakika-saniye, milisaniye) ve
+  yapraklar çoğunlukla 10'ar karelik seriler hâlinde çekilmiş; aynı serinin kareleri çoğu zaman Hamming ≤ 20
+  eşiğini aşıyor ve ayrı gruplara düştü. Aynı sınıf içinde zamana göre sıralanınca ardışık iki kare arasındaki
+  fark ya 0–1 sn ya da en az 10 sn; arada değer yok, bu yüzden 2 sn'lik pencere serileri ayırmak için güvenli. Depodaki bölme bu eski gruplarla yapıldığı için ortak grup sayısı 0 olmasına
+  rağmen sızıntı var: `scripts/bolme_denetimi.py` 145 çekim saniyesini hem eğitimde hem doğrulamada buldu;
+  kaynak A'nın 314 doğrulama görüntüsünden 299'unun (738'lik doğrulama kümesinin %40,5'i) eğitimde aynı
+  saniyeden bir eşi var. `yakin_kopya.py` artık aynı kaynak + sınıfta zaman damgaları arasında en çok 2 sn olan
+  kareleri de (zincirleme) aynı gruba birleştiriyor; zaman damgası olmayan adlarda (B: `Good_Leaf_671.png`,
+  C: `DSC_0629.jpg`; bu sayılar sıra numarasıdır, çekim zamanı değil) yalnızca dHash kullanılıyor. C'deki iki
+  sağlıklı karenin elle birleştirilmesi de artık betikte (`ELLE_BIRLESTIR`). Depodaki `etiketler.csv` ve
+  `bolme_*.csv` henüz yeniden üretilmedi.
 
 `data\etiketler.csv` sütunları: `dosya, sinif, kume(raw|raw_ek), kaynak, kaynak_yol, kaynak_url, lisans,
 sha256, bicim, mod, genislik, yukseklik, grup`.
@@ -141,7 +157,9 @@ hale_yanikligi 8 + 12 (+ ön incelemede 3 tam çözünürlük), saglikli 8 (A+B 
    yakın-kopya grubu.
 3. **Sınıf dengesizliği:** saglikli 1696 / CBB 533 / hale 231. Sınıf ağırlığı ya da örnekleme gerekir; sağlıklı
    sınıfı alt-örneklemek de bir seçenek.
-4. **Yakın kopyalar:** Kaynak B'de yoğun. Bölme mutlaka `grup` sütununa göre yapılmalı.
+4. **Yakın kopyalar ve seri çekimler:** dHash yakın kopyaları kaynak B'de yoğun; kaynak A'da ise aynı yaprağın
+   çoğunlukla 10'ar karelik seri çekimleri var ve dHash bunları yakalamıyor (§4). Bölme mutlaka seri çekime duyarlı
+   `grup` sütununa göre yapılmalı ve `scripts/bolme_denetimi.py` ile denetlenmeli.
 5. **Tür belirsizliği:** A ve B'nin "bean"i büyük olasılıkla Bangladeş fasulyesi; *P. vulgaris* olduğu
    kaynaklarda belirtilmemiş. Yalnızca C kesin olarak *P. vulgaris* (Feijão).
 6. **Şiddet etiketi yok.**
@@ -178,6 +196,6 @@ bilgisi `data\etiketler.csv` içinde.
   hata verebilir; bu durumda projeyi kısa bir yola taşıyın.
 - Betikler (`scripts\`): `indir.py` (indirme + boyut/SHA-256 doğrulama), `uzak_zip_listele.py` /
   `uzak_zip_ornek.py` (büyük ZIP'leri indirmeden HTTP Range ile listeleme/örnek alma), `duzenle.py` (doğrulama,
-  kopya ayıklama, `data\raw`, `data\raw_ek`, `etiketler.csv`), `yakin_kopya.py` (dHash grupları),
+  kopya ayıklama, `data\raw`, `data\raw_ek`, `etiketler.csv`), `yakin_kopya.py` (dHash + seri çekim grupları), `bolme_denetimi.py` (eğitim/doğrulama sızıntı denetimi),
   `temas_sayfasi.py` (görsel kontrol sayfaları). İndirilen arşivlerdeki hiçbir betik çalıştırılmadı; arşiv içi
   yollar dosya yazarken kullanılmadı.

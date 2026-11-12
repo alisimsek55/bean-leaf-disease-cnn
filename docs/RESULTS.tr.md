@@ -14,7 +14,12 @@ Tarih: 2026-11-11. Donanım: NVIDIA RTX 4070 Laptop GPU (8 GB), PyTorch 2.11.0+c
 Üç sınıf (adi yaprak yanıklığı = CBB, hale yanıklığı, sağlıklı) için 16 katmanlı, 1 772 995 parametreli,
 sıfırdan eğitilmiş bir CNN (FasulyeCNN) kurduk. Arka planı silip siyaha boyadık, yaprağa kırptık,
 yakın-kopya gruplarına göre %70/%30 böldük. Doğrulama kümesinde (738 görüntü) **doğruluk %97,6, makro F1
-%95,5** elde edildi. **Ancak bu sayı "model hastalığı tanıyor" diye okunmamalıdır.** Kontrol deneyleri şunu
+%95,5** elde edildi. **Bu bölmede sonradan bulunan bir sızıntı var:** dHash grupları iki tarafa bölünmedi
+(ortak grup 0), ama kaynak A'nın seri çekim kareleri (aynı yaprağın ard arda çekilmiş fotoğrafları) eğitim ve
+doğrulamaya dağıldı. `scripts/bolme_denetimi.py` denetimine göre 145 çekim saniyesi iki tarafta da var ve kaynak
+A'nın 314 doğrulama görüntüsünden 299'unun (738'lik doğrulama kümesinin %40,5'i) eğitimde aynı saniyede çekilmiş
+bir eşi bulunuyor. Bu yüzden %97,6 / %95,5, bölme seri çekime duyarlı gruplarla yeniden kurulup modeller yeniden
+eğitilene kadar (planlandı) **iyimser bir üst sınır** olarak okunmalıdır (§3, §8). **Ancak bu sayı "model hastalığı tanıyor" diye okunmamalıdır.** Kontrol deneyleri şunu
 gösterdi: (1) Maskelemeden sonra bile görüntünün hangi veri kaynağından geldiği aynı CNN ile **%100**
 ayırt edilebiliyor; hale sınıfının tamamı tek kaynaktan, CBB'nin %95'i başka bir kaynaktan geldiği için
 **CBB ↔ hale ayrımı kaynak ayrımıyla birebir örtüşüyor**. (2) Eğitimde hiç görülmeyen üçüncü bir kaynaktaki
@@ -96,7 +101,19 @@ ipuçları). Yani maskeleme **zemini** kaldırdı, **kaynak imzasını** kaldır
 
 - Oran: **%70 eğitim / %30 doğrulama** (hocanın örneğindeki gibi; ayrı test kümesi yok).
 - **Grup bazlı:** `etiketler.csv`'deki `grup` (aynı yaprağın neredeyse aynı kareleri; dHash) iki tarafa
-  bölünmedi. Denetim: ortak grup sayısı = 0.
+  bölünmedi: ortak grup sayısı = 0. **Ancak bu, sızıntı olmadığını göstermiyor.** Kaynak A'da aynı yaprağın
+  seri çekim kareleri çoğu zaman dHash eşiğini (Hamming ≤ 20) aşacak kadar farklı olduğundan her biri ayrı
+  gruba düştü. Sonradan yazılan `scripts/bolme_denetimi.py` denetimi, dosya adındaki çekim zamanına
+  (`IMG_<tarih>_<saat>_<ms>`) bakarak şunu buldu: 145 çekim saniyesi hem eğitimde hem doğrulamada var (kaynak
+  A'nın 34 çekim dakikasının hepsi iki tarafta); kaynak A'nın 314 doğrulama görüntüsünden 299'unun (doğrulama
+  kümesinin %40,5'i) eğitimde aynı saniyede çekilmiş bir eşi var; 2 saniyelik seri penceresiyle bu sayı 312.
+  Örnek: `IMG_20240105_235312` saniyesinin 3 karesi eğitimde, 2 karesi doğrulamada. B ve C'nin dosya adlarında
+  çekim zamanı yok; onlar için yalnızca dHash gruplaması geçerli, seri sızıntısı bu denetimle ne bulunabilir ne
+  dışlanabilir.
+- **Düzeltme (yapıldı, bölme henüz yeniden kurulmadı):** `scripts/yakin_kopya.py` artık aynı kaynak ve sınıfta
+  zaman damgaları arasında en çok 2 saniye olan kareleri de aynı gruba birleştiriyor. Depodaki
+  `data/bolme_*.csv` ve raporlanan modeller bu düzeltmeden önceye ait; yeniden bölme ve yeniden eğitim
+  planlandı.
 - **Katmanlı:** her (sınıf, kaynak) katmanında gruplar tohum 42 ile karıştırılıp doğrulamaya, görüntü sayısı
   katmanın %30'una en yakın olacak şekilde eklendi.
 - **Dengeleme veri atarak yapılmadı** (gerekçe §5); bu yüzden aşağıdaki sayılar ön işleme + dışlama
@@ -280,10 +297,10 @@ alanından fazla bakılıyor).
   ama lekenin **kaynak-özgü görünümünü** (A'nın pembemsi lekeleri vs B'nin kahverengi nekrozu) mi yoksa
   hastalığa özgü özelliği mi kullandığını ayıramaz.
 
-**Kontrollerin toplam anlamı:** Sızıntı (grup) yok, zemin kaldırıldı, siluet yetmiyor, model lekelere
+**Kontrollerin toplam anlamı:** Ortak dHash grubu yok (ama kaynak A'da seri çekim sızıntısı var, §3), zemin kaldırıldı, siluet yetmiyor, model lekelere
 bakıyor → **aynı kaynak içinde hastalıklı/sağlıklı ayrımı** gerçek görünüyor (A'da sağlıklıların %100'ü
 doğru; B'de sağlıklıların %95,1'i doğru, hatalar hale yönünde). Ancak **hastalık türü (CBB vs hale) ayrımı
-kaynakla tamamen karışık** ve kaynak dışı genelleme zayıf (%20). %97,6'lık doğruluk bu nedenle bir üst sınır
+kaynakla tamamen karışık** ve kaynak dışı genelleme zayıf (%20). Kaynak A'daki seri sızıntısı da A'nın sonuçlarını bilinmeyen bir miktarda şişiriyor. %97,6'lık doğruluk bu nedenle bir üst sınır
 / iyimser tahmindir.
 
 ### 6.3 İsteğe bağlı ek: transfer öğrenmesi (EfficientNet-B0) — `src/07_ek_efficientnet.py`
@@ -340,20 +357,29 @@ bu nedenle şiddet ölçüsü de kaynağa bağımlı. Yansıma, sap ve kenar gö
 1. **Kaynak–sınıf karışması (en önemli):** Hale %100 kaynak B, CBB %95 kaynak A. Maskelemeden sonra bile kaynak
    %100 tahmin edilebiliyor; CBB ↔ hale ayrımı hastalık bilgisinden mi kaynak bilgisinden mi geliyor
    ayırt edilemiyor. Kaynak dışı CBB testinde başarı %20.
-2. **Hale yanıklığı etiket güveni düşük:** Önceki aşamadaki görsel incelemede hale klasöründeki görüntülerin
+2. **Depodaki bölmede seri çekim sızıntısı:** dHash grupları ayrık (ortak grup 0), ama kaynak A'da 145 çekim
+   saniyesi hem eğitimde hem doğrulamada var; kaynak A'nın 314 doğrulama görüntüsünden 299'unun (738'in
+   %40,5'i) eğitimde aynı saniyeden bir eşi var (2 sn pencereyle 312). Raporlanan %97,56 doğruluk / %95,5 makro
+   F1 ve aynı bölmeyi kullanan kontrol eğitimleri ile EfficientNet-B0 bu yüzden iyimser, özellikle kaynak A
+   için; üst sınır olarak okunmalı. Gruplama artık seri çekime duyarlı ve `scripts/bolme_denetimi.py` bunu
+   denetliyor; bölmenin yeniden kurulması ve yeniden eğitim planlandı, henüz yapılmadı. B ve C'de dosya adında
+   zaman damgası olmadığından seri sızıntısı orada denetlenemiyor.
+3. **Hale yanıklığı etiket güveni düşük:** Önceki aşamadaki görsel incelemede hale klasöründeki görüntülerin
    yalnızca ~%20–30'u tipik hale belirtisi gösteriyordu; çoğu CBB'ye benziyor. Kaynak (B) için patojen
    doğrulaması / yöntem makalesi yok. Etiketler değiştirilmedi. Şiddet kuralı da hale görüntülerinin %18'inde
    lezyon bulamadı.
-3. **Tür belirsizliği:** A ve B'deki "bean" yaprakları *Phaseolus vulgaris* olmayabilir (Bangladeş fasulyesi /
+4. **Tür belirsizliği:** A ve B'deki "bean" yaprakları *Phaseolus vulgaris* olmayabilir (Bangladeş fasulyesi /
    *Lablab purpureus* olabilir); yalnızca C kesin *P. vulgaris*.
-4. **Ayrı test kümesi yok:** %70/%30 bölmede doğrulama kümesi hem erken durdurma/model seçimi hem de raporlama
+5. **Ayrı test kümesi yok:** %70/%30 bölmede doğrulama kümesi hem erken durdurma/model seçimi hem de raporlama
    için kullanıldı → sonuçlar hafif iyimser. Doğrulama doğruluğu epochlar arasında %85–99 arasında
    dalgalandı; tek bir tohum/bölme ile çalışıldı (varyans ölçülmedi).
-5. **Az bağımsız örnek:** Hale 231 görüntü ama 146 farklı yaprak; doğrulamada 44 hale grubu var.
-6. **Maskeleme kusursuz değil:** 9 görüntü dışlandı; C'de kart parçacıkları, A'da az sayıda kumaş artığı kaldı.
-7. **Şiddet ölçüsü uzman etiketi değil;** renk kuralına dayalı, kaynağa bağımlı, gri/soluk lezyonları kaçırabilir.
-8. **Grad-CAM kaba:** 8×8 çözünürlük; CAM'in %32–45'i yaprak dışı siyah alana düşüyor.
-9. Embrapa kaynak dışı testi yalnızca 25 CBB + 2 sağlıklı görüntüyle yapıldı (aynı yaprağın 2 karesi);
+6. **Az bağımsız örnek:** Hale 231 görüntü ama 146 farklı yaprak; doğrulamada 44 hale grubu var. Kaynak A'da
+   1 057 görüntü var, ama dHash gruplarını 2 saniyelik seri penceresiyle birleştirince yalnızca 110 grup kalıyor
+   (100'ü 10 karelik seri).
+7. **Maskeleme kusursuz değil:** 9 görüntü dışlandı; C'de kart parçacıkları, A'da az sayıda kumaş artığı kaldı.
+8. **Şiddet ölçüsü uzman etiketi değil;** renk kuralına dayalı, kaynağa bağımlı, gri/soluk lezyonları kaçırabilir.
+9. **Grad-CAM kaba:** 8×8 çözünürlük; CAM'in %32–45'i yaprak dışı siyah alana düşüyor.
+10. Embrapa kaynak dışı testi yalnızca 25 CBB + 2 sağlıklı görüntüyle yapıldı (aynı yaprağın 2 karesi);
    istatistiksel güveni düşük.
 
 ## 9. Yapılmayan / başarısız olanlar
@@ -399,9 +425,10 @@ Diğer: `ciktilar/model_en_iyi.pt` (ana model ağırlıkları + normalizasyon), 
 1. Üç açık kaynaktan 2460 fasulye yaprağı görüntüsü toplandı (CBB 533, hale 231, sağlıklı 1696).
 2. Ön işleme: yaprak zeminden ayrıldı (eşikleme + morfoloji + GrabCut), zemin siyaha boyandı, yaprağa kırpıldı,
    256×256 PNG; 9 hatalı maske elendi → 2451 görüntü.
-3. Yakın-kopya gruplarına göre %70 eğitim (1713) / %30 doğrulama (738) bölündü.
+3. Yakın-kopya gruplarına göre %70 eğitim (1713) / %30 doğrulama (738) bölündü (sonradan bulunan sorun: kaynak A'nın
+   seri çekim kareleri iki tarafa dağılmış; 314 A doğrulama görüntüsünün 299'unun eğitimde aynı saniyeden eşi var).
 4. Sıfırdan 16 katmanlı CNN tasarlandı (4×4 evrişim + ReLU, 2×2 havuzlama, %20 dropout, softmax; 1,77 M parametre).
 5. Sınıf ağırlıklı kayıp ve veri artırmayla 50 epoch eğitildi (en iyi epoch 35).
-6. Doğrulama: doğruluk %97,6, makro F1 %95,5.
+6. Doğrulama: doğruluk %97,6, makro F1 %95,5 (seri sızıntısı nedeniyle iyimser üst sınır).
 7. Kontroller: siluet %52,3; kaynak tahmini %100; görülmemiş kaynaktaki CBB %20 → başarı kaynak karışmasıyla şişmiş.
 8. Kural tabanlı şiddet: sağlıklı (<%0,5 lezyon), az hastalıklı (%0,5–13), hastalıklı (≥%13).
