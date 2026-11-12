@@ -3,9 +3,9 @@
     "ad": "FasulyeCNN (sıfırdan, 16 katman)",
     "giris_boyutu": 128,
     "parametre_sayisi": 1772995,
-    "egitim_suresi_sn": 1009.1,
-    "calisan_epoch": 50,
-    "en_iyi_epoch": 35,
+    "egitim_suresi_sn": 901.0,
+    "calisan_epoch": 26,
+    "en_iyi_epoch": 11,
     "egitim_ayarlari": {
       "optimizer": "AdamW",
       "lr": 0.001,
@@ -16,39 +16,39 @@
       "lr_plani": "ReduceLROnPlateau(factor=0.5, patience=5)"
     },
     "kayip_agirliklari": [
-      1.5308310985565186,
-      3.524691343307495,
-      0.4847198724746704
+      1.5417789220809937,
+      3.5308642387390137,
+      0.48351648449897766
     ],
     "egitim_sinif_sayilari": [
-      373,
+      371,
       162,
-      1178
+      1183
     ],
     "cihaz": "cuda",
-    "en_iyi_epoch_egitim_dogrulugu": 0.9752358490566038,
+    "en_iyi_epoch_egitim_dogrulugu": 0.910377358490566,
     "dogrulama": {
-      "dogruluk": 0.975609756097561,
-      "dengeli_dogruluk": 0.9867837262606418,
-      "makro_f1": 0.9548325237980411,
+      "dogruluk": 0.9659863945578231,
+      "dengeli_dogruluk": 0.9723148787158449,
+      "makro_f1": 0.940641125845017,
       "sinif_bazinda": {
         "adi_yaprak_yanikligi": {
           "kesinlik": 1.0,
-          "duyarlilik": 0.99375,
-          "f1": 0.9968652037617555,
-          "destek": 160
+          "duyarlilik": 0.9691358024691358,
+          "f1": 0.9843260188087775,
+          "destek": 162
         },
         "hale_yanikligi": {
-          "kesinlik": 0.7931034482758621,
-          "duyarlilik": 1.0,
-          "f1": 0.8846153846153846,
+          "kesinlik": 0.7640449438202247,
+          "duyarlilik": 0.9855072463768116,
+          "f1": 0.8607594936708861,
           "destek": 69
         },
         "saglikli": {
-          "kesinlik": 1.0,
-          "duyarlilik": 0.9666011787819253,
-          "f1": 0.983016983016983,
-          "destek": 509
+          "kesinlik": 0.9918200408997955,
+          "duyarlilik": 0.9623015873015873,
+          "f1": 0.9768378650553877,
+          "destek": 504
         }
       },
       "karisiklik_matrisi": {
@@ -59,75 +59,75 @@
         ],
         "matris": [
           [
-            159,
-            1,
-            0
+            157,
+            2,
+            3
           ],
           [
             0,
-            69,
-            0
+            68,
+            1
           ],
           [
             0,
-            17,
-            492
+            19,
+            485
           ]
         ]
       },
       "kaynak_bazinda": {
         "adi_yaprak_yanikligi | kaynak C": {
           "n": 8,
-          "dogruluk": 0.875,
+          "dogruluk": 0.375,
           "tahmin_dagilimi": {
-            "adi_yaprak_yanikligi": 7,
-            "hale_yanikligi": 1,
-            "saglikli": 0
+            "adi_yaprak_yanikligi": 3,
+            "hale_yanikligi": 2,
+            "saglikli": 3
           }
         },
         "adi_yaprak_yanikligi | kaynak A": {
-          "n": 152,
+          "n": 154,
           "dogruluk": 1.0,
           "tahmin_dagilimi": {
-            "adi_yaprak_yanikligi": 152,
+            "adi_yaprak_yanikligi": 154,
             "hale_yanikligi": 0,
             "saglikli": 0
           }
         },
         "hale_yanikligi | kaynak B": {
           "n": 69,
-          "dogruluk": 1.0,
+          "dogruluk": 0.9855072463768116,
           "tahmin_dagilimi": {
             "adi_yaprak_yanikligi": 0,
-            "hale_yanikligi": 69,
-            "saglikli": 0
+            "hale_yanikligi": 68,
+            "saglikli": 1
           }
         },
         "saglikli | kaynak B": {
-          "n": 347,
-          "dogruluk": 0.9510086455331412,
+          "n": 344,
+          "dogruluk": 0.9447674418604651,
           "tahmin_dagilimi": {
             "adi_yaprak_yanikligi": 0,
-            "hale_yanikligi": 17,
-            "saglikli": 330
+            "hale_yanikligi": 19,
+            "saglikli": 325
           }
         },
         "saglikli | kaynak A": {
-          "n": 162,
+          "n": 160,
           "dogruluk": 1.0,
           "tahmin_dagilimi": {
             "adi_yaprak_yanikligi": 0,
             "hale_yanikligi": 0,
-            "saglikli": 162
+            "saglikli": 160
           }
         },
         "TUM | kaynak C": {
           "n": 8,
-          "dogruluk": 0.875
+          "dogruluk": 0.375
         },
         "TUM | kaynak B": {
-          "n": 416,
-          "dogruluk": 0.9591346153846154
+          "n": 413,
+          "dogruluk": 0.9515738498789347
         },
         "TUM | kaynak A": {
           "n": 314,
@@ -135,73 +135,73 @@
         }
       },
       "cbb_hale_karisikligi": {
-        "cbb_iken_hale_denen": 1,
+        "cbb_iken_hale_denen": 2,
         "hale_iken_cbb_denen": 0,
-        "cbb_toplam": 160,
+        "cbb_toplam": 162,
         "hale_toplam": 69,
-        "hastalikli_iken_saglikli_denen": 0,
-        "saglikli_iken_hastalikli_denen": 17
+        "hastalikli_iken_saglikli_denen": 4,
+        "saglikli_iken_hastalikli_denen": 19
       },
       "gradcam_nicel": {
         "adi_yaprak_yanikligi": {
-          "cam_payi_yaprak_ici": 0.5921054482460022,
-          "alan_payi_yaprak": 0.46422119140625,
-          "cam_payi_kenar_seridi": 0.10451173782348633,
-          "alan_payi_kenar_seridi": 0.10199699401855469,
-          "cam_payi_lezyon": 0.11117718368768692,
-          "alan_payi_lezyon": 0.07590599060058593,
-          "kenar_zenginlesme": 1.025934082020013,
-          "lezyon_zenginlesme_medyan": 1.4358586009145982
+          "cam_payi_yaprak_ici": 0.5919454097747803,
+          "alan_payi_yaprak": 0.4716510537229938,
+          "cam_payi_kenar_seridi": 0.10345397889614105,
+          "alan_payi_kenar_seridi": 0.10275494610821759,
+          "cam_payi_lezyon": 0.12020987272262573,
+          "alan_payi_lezyon": 0.08142541956018519,
+          "kenar_zenginlesme": 1.011617351400577,
+          "lezyon_zenginlesme_medyan": 1.4270320078919834
         },
         "hale_yanikligi": {
-          "cam_payi_yaprak_ici": 0.681463360786438,
-          "alan_payi_yaprak": 0.46841386435688404,
-          "cam_payi_kenar_seridi": 0.11369935423135757,
-          "alan_payi_kenar_seridi": 0.10149527287137682,
-          "cam_payi_lezyon": 0.07283993810415268,
-          "alan_payi_lezyon": 0.028017790421195652,
-          "kenar_zenginlesme": 1.136421274738774,
-          "lezyon_zenginlesme_medyan": 2.65229424541483
+          "cam_payi_yaprak_ici": 0.6590805649757385,
+          "alan_payi_yaprak": 0.4557937400928442,
+          "cam_payi_kenar_seridi": 0.11359001696109772,
+          "alan_payi_kenar_seridi": 0.09906359686367754,
+          "cam_payi_lezyon": 0.08249083161354065,
+          "alan_payi_lezyon": 0.03234244084012681,
+          "kenar_zenginlesme": 1.1589535984848485,
+          "lezyon_zenginlesme_medyan": 2.698866053554254
         },
         "saglikli": {
-          "cam_payi_yaprak_ici": 0.5486775040626526,
-          "alan_payi_yaprak": 0.4911416284227652,
-          "cam_payi_kenar_seridi": 0.0900469720363617,
-          "alan_payi_kenar_seridi": 0.10282745061548379,
-          "cam_payi_lezyon": 2.311216485395562e-05,
-          "alan_payi_lezyon": 3.2256300650785854e-05,
-          "kenar_zenginlesme": 0.8850265203737745,
+          "cam_payi_yaprak_ici": 0.5698169469833374,
+          "alan_payi_yaprak": 0.5040992857917906,
+          "cam_payi_kenar_seridi": 0.09749679267406464,
+          "alan_payi_kenar_seridi": 0.10399349152095734,
+          "cam_payi_lezyon": 7.973521860549226e-06,
+          "alan_payi_lezyon": 5.8128720238095235e-06,
+          "kenar_zenginlesme": 0.9377799769260038,
           "lezyon_zenginlesme_medyan": NaN
         }
       }
     }
   },
   "taban_cizgisi_cogunluk_sinifi": {
-    "dogruluk": 0.6897018970189702,
-    "makro_f1": 0.2721197540764501
+    "dogruluk": 0.6857142857142857,
+    "makro_f1": 0.2711864406779661
   },
   "kontrol_siluet": {
-    "dogruluk": 0.5230352303523035,
-    "dengeli_dogruluk": 0.5618977368715773,
-    "makro_f1": 0.47883406478454443,
+    "dogruluk": 0.5251700680272109,
+    "dengeli_dogruluk": 0.41658359532755673,
+    "makro_f1": 0.3490334658590502,
     "sinif_bazinda": {
       "adi_yaprak_yanikligi": {
-        "kesinlik": 0.5416666666666666,
-        "duyarlilik": 0.73125,
-        "f1": 0.6223404255319149,
-        "destek": 160
+        "kesinlik": 1.0,
+        "duyarlilik": 0.06790123456790123,
+        "f1": 0.12716763005780346,
+        "destek": 162
       },
       "hale_yanikligi": {
-        "kesinlik": 0.14345991561181434,
-        "duyarlilik": 0.4927536231884058,
-        "f1": 0.2222222222222222,
+        "kesinlik": 0.1206896551724138,
+        "duyarlilik": 0.5072463768115942,
+        "f1": 0.19498607242339833,
         "destek": 69
       },
       "saglikli": {
-        "kesinlik": 0.8245614035087719,
-        "duyarlilik": 0.46168958742632615,
-        "f1": 0.5919395465994962,
-        "destek": 509
+        "kesinlik": 0.783410138248848,
+        "duyarlilik": 0.6746031746031746,
+        "f1": 0.7249466950959488,
+        "destek": 504
       }
     },
     "karisiklik_matrisi": {
@@ -212,101 +212,101 @@
       ],
       "matris": [
         [
-          117,
-          17,
-          26
-        ],
-        [
           11,
-          34,
-          24
+          91,
+          60
         ],
         [
-          88,
-          186,
-          235
+          0,
+          35,
+          34
+        ],
+        [
+          0,
+          164,
+          340
         ]
       ]
     },
     "kaynak_bazinda": {
       "adi_yaprak_yanikligi | kaynak C": {
         "n": 8,
-        "dogruluk": 0.875,
+        "dogruluk": 0.75,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 7,
-          "hale_yanikligi": 0,
+          "adi_yaprak_yanikligi": 6,
+          "hale_yanikligi": 1,
           "saglikli": 1
         }
       },
       "adi_yaprak_yanikligi | kaynak A": {
-        "n": 152,
-        "dogruluk": 0.7236842105263158,
+        "n": 154,
+        "dogruluk": 0.032467532467532464,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 110,
-          "hale_yanikligi": 17,
-          "saglikli": 25
+          "adi_yaprak_yanikligi": 5,
+          "hale_yanikligi": 90,
+          "saglikli": 59
         }
       },
       "hale_yanikligi | kaynak B": {
         "n": 69,
-        "dogruluk": 0.4927536231884058,
+        "dogruluk": 0.5072463768115942,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 11,
-          "hale_yanikligi": 34,
-          "saglikli": 24
+          "adi_yaprak_yanikligi": 0,
+          "hale_yanikligi": 35,
+          "saglikli": 34
         }
       },
       "saglikli | kaynak B": {
-        "n": 347,
-        "dogruluk": 0.5043227665706052,
+        "n": 344,
+        "dogruluk": 0.752906976744186,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 45,
-          "hale_yanikligi": 127,
-          "saglikli": 175
+          "adi_yaprak_yanikligi": 0,
+          "hale_yanikligi": 85,
+          "saglikli": 259
         }
       },
       "saglikli | kaynak A": {
-        "n": 162,
-        "dogruluk": 0.37037037037037035,
+        "n": 160,
+        "dogruluk": 0.50625,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 43,
-          "hale_yanikligi": 59,
-          "saglikli": 60
+          "adi_yaprak_yanikligi": 0,
+          "hale_yanikligi": 79,
+          "saglikli": 81
         }
       },
       "TUM | kaynak C": {
         "n": 8,
-        "dogruluk": 0.875
+        "dogruluk": 0.75
       },
       "TUM | kaynak B": {
-        "n": 416,
-        "dogruluk": 0.5024038461538461
+        "n": 413,
+        "dogruluk": 0.711864406779661
       },
       "TUM | kaynak A": {
         "n": 314,
-        "dogruluk": 0.5414012738853503
+        "dogruluk": 0.27388535031847133
       }
     },
-    "egitim_suresi_sn": 486.9,
-    "calisan_epoch": 46,
-    "en_iyi_epoch": 31
+    "egitim_suresi_sn": 629.5,
+    "calisan_epoch": 42,
+    "en_iyi_epoch": 27
   },
   "kontrol_kaynak_tahmini_saglikli": {
-    "dogruluk": 1.0,
-    "dengeli_dogruluk": 1.0,
-    "makro_f1": 1.0,
+    "dogruluk": 0.9920634920634921,
+    "dengeli_dogruluk": 0.992514534883721,
+    "makro_f1": 0.9908733679807327,
     "sinif_bazinda": {
       "A_siyah_kumas": {
-        "kesinlik": 1.0,
-        "duyarlilik": 1.0,
-        "f1": 1.0,
-        "destek": 162
+        "kesinlik": 0.9814814814814815,
+        "duyarlilik": 0.99375,
+        "f1": 0.9875776397515528,
+        "destek": 160
       },
       "B_beyaz_zemin": {
-        "kesinlik": 1.0,
-        "duyarlilik": 1.0,
-        "f1": 1.0,
-        "destek": 347
+        "kesinlik": 0.9970760233918129,
+        "duyarlilik": 0.9912790697674418,
+        "f1": 0.9941690962099126,
+        "destek": 344
       }
     },
     "karisiklik_matrisi": {
@@ -316,29 +316,29 @@
       ],
       "matris": [
         [
-          162,
-          0
+          159,
+          1
         ],
         [
-          0,
-          347
+          3,
+          341
         ]
       ]
     },
-    "egitim_ornek": 1176,
-    "calisan_epoch": 66
+    "egitim_ornek": 1181,
+    "calisan_epoch": 52
   },
   "kontrol_embrapa_kaynak_disi_test": {
     "n": 27,
-    "dogruluk": 0.25925925925925924,
+    "dogruluk": 0.14814814814814814,
     "sinif_bazinda": {
       "adi_yaprak_yanikligi": {
         "n": 25,
-        "dogru": 5,
+        "dogru": 2,
         "tahmin_dagilimi": {
-          "adi_yaprak_yanikligi": 5,
+          "adi_yaprak_yanikligi": 2,
           "hale_yanikligi": 13,
-          "saglikli": 7
+          "saglikli": 10
         }
       },
       "saglikli": {
@@ -352,18 +352,18 @@
       }
     },
     "ayni_model_AB_dogrulama": {
-      "dogruluk": 0.9958904109589041,
-      "makro_f1": 0.9919225797435628
+      "dogruluk": 0.9903713892709766,
+      "makro_f1": 0.9796539884676599
     }
   },
   "veri_bolme": {
     "sinif_tablosu": [
       {
         "sinif": "adi_yaprak_yanikligi",
-        "egitim": 373,
-        "dogrulama": 160,
+        "egitim": 371,
+        "dogrulama": 162,
         "toplam": 533,
-        "dogrulama_orani": 0.3
+        "dogrulama_orani": 0.304
       },
       {
         "sinif": "hale_yanikligi",
@@ -374,17 +374,17 @@
       },
       {
         "sinif": "saglikli",
-        "egitim": 1178,
-        "dogrulama": 509,
+        "egitim": 1183,
+        "dogrulama": 504,
         "toplam": 1687,
-        "dogrulama_orani": 0.302
+        "dogrulama_orani": 0.299
       },
       {
         "sinif": "TOPLAM",
-        "egitim": 1713,
-        "dogrulama": 738,
+        "egitim": 1716,
+        "dogrulama": 735,
         "toplam": 2451,
-        "dogrulama_orani": 0.301
+        "dogrulama_orani": 0.3
       }
     ],
     "sinif_kaynak_tablosu": [
@@ -397,8 +397,8 @@
       {
         "sinif": "adi_yaprak_yanikligi",
         "kaynak": "mendeley_ykvcrjffzd",
-        "dogrulama": 152,
-        "egitim": 356
+        "dogrulama": 154,
+        "egitim": 354
       },
       {
         "sinif": "hale_yanikligi",
@@ -415,28 +415,28 @@
       {
         "sinif": "saglikli",
         "kaynak": "mendeley_3km9d246z2",
-        "dogrulama": 347,
-        "egitim": 798
+        "dogrulama": 344,
+        "egitim": 801
       },
       {
         "sinif": "saglikli",
         "kaynak": "mendeley_ykvcrjffzd",
-        "dogrulama": 162,
-        "egitim": 378
+        "dogrulama": 160,
+        "egitim": 380
       }
     ],
     "grup_sayilari": {
       "adi_yaprak_yanikligi": {
-        "dogrulama": 159,
-        "egitim": 373
+        "dogrulama": 24,
+        "egitim": 54
       },
       "hale_yanikligi": {
-        "dogrulama": 44,
-        "egitim": 102
+        "dogrulama": 51,
+        "egitim": 95
       },
       "saglikli": {
-        "dogrulama": 284,
-        "egitim": 643
+        "dogrulama": 134,
+        "egitim": 310
       }
     },
     "dislanan_goruntu": 9,
@@ -535,9 +535,9 @@
       "model": "EfficientNet-B0 (ImageNet ön eğitimli, tüm ağ ince ayar)",
       "giris": 224,
       "parametre_sayisi": 4011391,
-      "egitim_suresi_sn": 699.0,
-      "calisan_epoch": 21,
-      "en_iyi_epoch": 13,
+      "egitim_suresi_sn": 1277.5,
+      "calisan_epoch": 23,
+      "en_iyi_epoch": 15,
       "dogruluk": 1.0,
       "makro_f1": 1.0,
       "sinif_bazinda": {
@@ -559,7 +559,7 @@
       },
       "karisiklik_matrisi": [
         [
-          160,
+          162,
           0,
           0
         ],
@@ -571,7 +571,7 @@
         [
           0,
           0,
-          509
+          504
         ]
       ],
       "kaynak_bazinda": {
@@ -580,7 +580,7 @@
           "dogruluk": 1.0
         },
         "adi_yaprak_yanikligi | kaynak A": {
-          "n": 152,
+          "n": 154,
           "dogruluk": 1.0
         },
         "hale_yanikligi | kaynak B": {
@@ -588,138 +588,150 @@
           "dogruluk": 1.0
         },
         "saglikli | kaynak B": {
-          "n": 347,
+          "n": 344,
           "dogruluk": 1.0
         },
         "saglikli | kaynak A": {
-          "n": 162,
+          "n": 160,
           "dogruluk": 1.0
         }
       },
       "gecmis": [
         {
           "epoch": 1,
-          "dogrulama_kayip": 0.03629331464366861,
-          "dogrulama_dogruluk": 0.9932249322493225,
-          "dogrulama_makro_f1": 0.9842014234224051
+          "dogrulama_kayip": 0.07319661374805736,
+          "dogrulama_dogruluk": 0.9891156462585035,
+          "dogrulama_makro_f1": 0.9747386008718251
         },
         {
           "epoch": 2,
-          "dogrulama_kayip": 0.019394658334290753,
-          "dogrulama_dogruluk": 0.997289972899729,
-          "dogrulama_makro_f1": 0.9944444444444445
+          "dogrulama_kayip": 0.011150943046929885,
+          "dogrulama_dogruluk": 0.998639455782313,
+          "dogrulama_makro_f1": 0.9965699267211617
         },
         {
           "epoch": 3,
-          "dogrulama_kayip": 0.016195086007660158,
-          "dogrulama_dogruluk": 0.986449864498645,
-          "dogrulama_makro_f1": 0.9734593045655552
+          "dogrulama_kayip": 0.06399948520421171,
+          "dogrulama_dogruluk": 0.9659863945578231,
+          "dogrulama_makro_f1": 0.9369029569000621
         },
         {
           "epoch": 4,
-          "dogrulama_kayip": 0.020096953090048095,
-          "dogrulama_dogruluk": 0.997289972899729,
-          "dogrulama_makro_f1": 0.9937970319565587
+          "dogrulama_kayip": 0.08649680301686433,
+          "dogrulama_dogruluk": 0.9360544217687075,
+          "dogrulama_makro_f1": 0.8983443076322333
         },
         {
           "epoch": 5,
-          "dogrulama_kayip": 0.00444983247778603,
+          "dogrulama_kayip": 0.0068470640029983125,
+          "dogrulama_dogruluk": 0.998639455782313,
+          "dogrulama_makro_f1": 0.9965412689500281
+        },
+        {
+          "epoch": 6,
+          "dogrulama_kayip": 0.0041849466028059425,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
-          "epoch": 6,
-          "dogrulama_kayip": 0.005060470085035818,
-          "dogrulama_dogruluk": 0.9986449864498645,
-          "dogrulama_makro_f1": 0.996556986385813
-        },
-        {
           "epoch": 7,
-          "dogrulama_kayip": 0.014227918722745042,
-          "dogrulama_dogruluk": 0.9850948509485095,
-          "dogrulama_makro_f1": 0.9717503204636894
+          "dogrulama_kayip": 0.0018509924823582984,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 8,
-          "dogrulama_kayip": 0.0008469010396610672,
+          "dogrulama_kayip": 0.004261759793081758,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 9,
-          "dogrulama_kayip": 0.0014702105540706496,
+          "dogrulama_kayip": 0.0009227200623500307,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 10,
-          "dogrulama_kayip": 0.0012720356806406,
-          "dogrulama_dogruluk": 1.0,
-          "dogrulama_makro_f1": 1.0
+          "dogrulama_kayip": 0.013579552246853203,
+          "dogrulama_dogruluk": 0.9972789115646259,
+          "dogrulama_makro_f1": 0.9931677018633541
         },
         {
           "epoch": 11,
-          "dogrulama_kayip": 0.0031409888841962027,
+          "dogrulama_kayip": 0.0019452594157282998,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 12,
-          "dogrulama_kayip": 0.00036883054792200817,
+          "dogrulama_kayip": 0.0009808726849503257,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 13,
-          "dogrulama_kayip": 0.00016137571808171261,
+          "dogrulama_kayip": 0.0003608531977499829,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 14,
-          "dogrulama_kayip": 0.0003892387050758608,
+          "dogrulama_kayip": 0.0003136050988774316,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 15,
-          "dogrulama_kayip": 0.00023426789638701022,
+          "dogrulama_kayip": 0.00025213486419952644,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 16,
-          "dogrulama_kayip": 9.298781262708167e-05,
-          "dogrulama_dogruluk": 1.0,
-          "dogrulama_makro_f1": 1.0
+          "dogrulama_kayip": 0.018499602849094743,
+          "dogrulama_dogruluk": 0.9959183673469387,
+          "dogrulama_makro_f1": 0.9897925366209318
         },
         {
           "epoch": 17,
-          "dogrulama_kayip": 0.00011288416936896113,
+          "dogrulama_kayip": 0.0012479221655790802,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 18,
-          "dogrulama_kayip": 0.00011432999929707767,
+          "dogrulama_kayip": 0.0004156000297643295,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 19,
-          "dogrulama_kayip": 0.0008489098439054834,
+          "dogrulama_kayip": 0.00042919970899947036,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 20,
-          "dogrulama_kayip": 0.0002187167721889474,
+          "dogrulama_kayip": 0.0010820973065814802,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         },
         {
           "epoch": 21,
-          "dogrulama_kayip": 0.0002744336660476881,
+          "dogrulama_kayip": 0.00813656609210813,
+          "dogrulama_dogruluk": 0.9972789115646259,
+          "dogrulama_makro_f1": 0.9952011649979858
+        },
+        {
+          "epoch": 22,
+          "dogrulama_kayip": 0.007682461854146451,
+          "dogrulama_dogruluk": 1.0,
+          "dogrulama_makro_f1": 1.0
+        },
+        {
+          "epoch": 23,
+          "dogrulama_kayip": 0.0006196886432502849,
           "dogrulama_dogruluk": 1.0,
           "dogrulama_makro_f1": 1.0
         }
