@@ -156,6 +156,7 @@ def _sahte_model(monkeypatch, kayit):
     monkeypatch.setattr(ma, "_genel_tahmin", sahte)
 
 
+@pytest.mark.skipif(not GENEL_VAR, reason="genel model dosyasi yok")
 def test_ayirma_basarisizsa_siddet_hesaplanamadi(monkeypatch):
     from PIL import Image
     kayit = []
@@ -169,6 +170,7 @@ def test_ayirma_basarisizsa_siddet_hesaplanamadi(monkeypatch):
     assert any("ayrılamadı" in u for u in r.uyarilar)
 
 
+@pytest.mark.skipif(not GENEL_VAR, reason="genel model dosyasi yok")
 def test_ayirma_basarisizsa_koyu_zemin_lezyon_sayilmaz(monkeypatch):
     """Maskeleme algoritmasından bağımsız: on_isle başarısız derse (tüm koyu fotoğraf) şiddet ölçülmez."""
     from PIL import Image
@@ -190,6 +192,7 @@ def _yaprak_goruntusu():
     return g
 
 
+@pytest.mark.skipif(not GENEL_VAR, reason="genel model dosyasi yok")
 def test_tek_hat_ayni_goruntu_ve_maske(monkeypatch):
     from PIL import Image
     kayit = []
