@@ -239,7 +239,7 @@ Tests (no data or GPU needed): `pip install -r requirements-ci.txt` plus PyTorch
 # or: powershell -ExecutionPolicy Bypass -File uygulama_baslat.ps1
 ```
 
-It uses `tahmin_et` from `src/tahmin.py` when that exists, otherwise `ciktilar/model_en_iyi.pt` (`uygulama/model_adaptoru.py`; the model in use is shown in small print on the page). The weights come from training and are not in the repository.
+It uses the general model via `src/tahmin.py` (`ciktilar/genel_model/model.pt`) when that exists, otherwise `ciktilar/model_en_iyi.pt` (`uygulama/model_adaptoru.py`; the model in use is shown in small print on the page). The weights come from training and are not in the repository. Model files are loaded with `torch.load(weights_only=True)` and their keys and class order are checked. A photo is preprocessed once with `src/genel_maske.py`, and the same crop and mask go to the model, the severity estimate and the screen. If the leaf cannot be separated from the background, severity is not computed. Uploads are limited to 15 MB, 40 MP and an aspect ratio of 8:1 (`.streamlit/config.toml`).
 
 ## Data sources and licenses
 

@@ -9,6 +9,8 @@ H_SARI = 27               # H < 27 (≈ 54°) sarı-turuncu-kahve tonları
 S_RENKLI = 60             # sarılık ölçütü için en az doygunluk (gri pikseller tonsuzdur)
 V_KOYU = 45               # bunun altı koyu nekroz
 DUZEYLER = ["sağlıklı", "az hastalıklı", "çok hastalıklı"]
+BELIRSIZ = "belirsiz"     # değerlendirilebilir yaprak pikseli yok/çok az: "sağlıklı" denmez (DUZEYLER'de değil)
+MIN_YAPRAK_PIKSEL = 50    # aşındırma sonrası bundan az yaprak pikseli varsa düzey belirsizdir
 T1_VARSAYILAN = 0.005     # docs/RESULTS.tr.md §7 (06 betiği veriden aynı değeri türetir)
 T2_VARSAYILAN = 0.13
 
@@ -26,6 +28,8 @@ def lezyon_maskesi(rgb: np.ndarray, maske: np.ndarray):
 
 
 def lezyon_orani(rgb, maske) -> float:
+    """Lezyon pikseli / değerlendirilen yaprak pikseli. Değerlendirilen yaprak boşsa 0.0 döner (eski davranış
+    korunur); bu 0.0 "sağlıklı" anlamına gelmez, düzey için siddet_duzeyi kullanılmalıdır."""
     lez, yap = lezyon_maskesi(rgb, maske)
     return float(lez.sum() / max(yap.sum(), 1))
 
@@ -36,8 +40,12 @@ def duzey(oran, t1, t2):
 
 def siddet_duzeyi(rgb, maske, t1: float = T1_VARSAYILAN, t2: float = T2_VARSAYILAN):
     """Tek görüntü için (lezyon_orani, düzey) döndürür. rgb: HxWx3 uint8 (PIL/numpy), maske: HxW (0/255).
-    Girdi 256x256 ön işlenmiş görüntü/maske ile eşik ayarlıdır; PIL görüntüsü de verilebilir."""
+    Girdi 256x256 ön işlenmiş görüntü/maske ile eşik ayarlıdır; PIL görüntüsü de verilebilir.
+    Değerlendirilebilir yaprak pikseli < MIN_YAPRAK_PIKSEL ise (0.0, BELIRSIZ) döner."""
     rgb = np.asarray(rgb.convert("RGB") if hasattr(rgb, "convert") else rgb, dtype=np.uint8)
     maske = np.asarray(maske.convert("L") if hasattr(maske, "convert") else maske)
-    oran = lezyon_orani(rgb, maske)
+    lez, yap = lezyon_maskesi(rgb, maske)
+    if int(yap.sum()) < MIN_YAPRAK_PIKSEL:  # boş/aşınma sonrası boşalan maske: yanlış "sağlıklı" verme
+        return 0.0, BELIRSIZ
+    oran = float(lez.sum() / yap.sum())
     return oran, duzey(oran, t1, t2)

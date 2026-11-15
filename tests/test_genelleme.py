@@ -97,3 +97,30 @@ def test_bugwood_kirpma_kutusu_etiketi_atar():
     assert bw.kirpma_kutusu("10,20,500,990", 1536, 1000) == (10, 20, 500, 930)
     with pytest.raises(ValueError):
         bw.kirpma_kutusu("0,0,10,10", 1536, 1000)
+
+
+@pytest.mark.parametrize("sekil", [(1, 10000), (10000, 1), (3, 5000), (1, 1)])
+def test_asiri_en_boy_orani_istisna_firlatmaz(sekil):
+    rgb = np.full((*sekil, 3), 128, np.uint8)
+    g, m, bilgi = genel_maske.on_isle(rgb)
+    assert g.shape == (256, 256, 3) and m.shape == (256, 256) and not bilgi["basarili"]
+
+
+def test_web_bol_bir_tarafi_bos_birakirsa_hata():
+    pytest.importorskip("torch")
+    gm = yukle("09_genelleme")
+    df = pd.DataFrame({"sinif": ["saglikli"] * 100, "grup": ["a"] * 80 + ["b"] * 20})
+    with pytest.raises(ValueError, match="saglikli"):
+        gm.web_bol(df)
+
+
+def test_c_bakis_kaydi_iki_kayit(tmp_path):
+    pytest.importorskip("torch")
+    gm = yukle("09_genelleme")
+    yol = tmp_path / "c_bakis_kaydi.jsonl"
+    gm.c_kaydi_yaz({"durum": "basladi", "deney": "x"}, yol)
+    gm.c_kaydi_yaz({"durum": "tamamlandi", "deney": "x", "C_toplam_dogru": 3}, yol)
+    import json
+    satirlar = [json.loads(s) for s in yol.read_text(encoding="utf-8").splitlines()]
+    assert [s["durum"] for s in satirlar] == ["basladi", "tamamlandi"]
+    assert all("zaman" in s for s in satirlar)

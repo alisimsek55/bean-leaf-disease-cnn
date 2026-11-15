@@ -507,9 +507,14 @@ dendi. Aşağıda ne denendiği ve neden işe yaramadığı anlatılıyor.
   da sahne fotoğrafı.
 
 ### 12.2 Protokol (C'ye bakmadan önceden kayıtlı: `on_kayit_plani.txt`)
-- C yalnız `--c_testi` bayrağıyla ve seçim bittikten sonra okundu; her okuma `c_bakis_kaydi.jsonl`'e yazıldı.
-- Erken durdurma yok: 15 epoch, OneCycle öğrenme oranı, son epoch kullanıldı (doğrulama kümesi model seçiminde
-  kullanılmadı). EfficientNet-B0 (ImageNet), 224 px, AdamW 3e-4, wd 0,05, etiket yumuşatma 0,1, sınıf ağırlıklı
+- C, model/etiket/tahmin amacıyla yalnız `--c_testi` bayrağıyla ve seçim bittikten sonra okundu; her okuma
+  `c_bakis_kaydi.jsonl`'e yazıldı. **Sabit kopya-denetimi istisnası:** C görüntüleri yalnız D/E'den C'nin kopyasını
+  elemek için dHash hesabına okundu (`src/08_web_veri.py`, `src/11_bugwood_veri.py`); etiket ya da model çıktısı
+  kullanılmadı; eşleşme 0 (sayılar etkilenmedi).
+- Erken durdurma yok: 15 epoch, OneCycle öğrenme oranı, son epoch kullanıldı (doğrulama kümesi erken durdurmada
+  kullanılmadı). **Ancak aday seçimi aynı doğrulama bölmesine dayanıyor:** adaylar, aynı bölmedeki sağlıklı tutma
+  sonuçlarına ve A+B doğrulama makro F1 ≥ 0,95 koşuluna göre seçildi; bu yüzden A+B doğrulama sonuçları seçim
+  yanlıdır (iyimser). EfficientNet-B0 (ImageNet), 224 px, AdamW 3e-4, wd 0,05, etiket yumuşatma 0,1, sınıf ağırlıklı
   kayıp, batch 32, karışık hassasiyet.
 - **Vekil kaynak-dışı protokol** (yalnız A+B ile): sağlıklı-A eğitimden (ve doğrulamadan) tamamen çıkarılır, sonra
   modelin sağlıklı-A doğrulama yapraklarına "sağlıklı" diyip demediği ölçülür (kısayol öğrenen model "A → CBB"
@@ -628,6 +633,12 @@ zayıf çıktı; (2) gerçekleşmedi — C'de CBB doğru tür 0/25 (üç tohumda
 - Taban (eğitim yok): önceki dağıtılan model (K3 t42) E-test yarısında **0/10** CBB (10'una "hale"); E'nin
   tamamında 1/20 (19'una "hale"). C'deki ayna hata E'de de var.
 - DINOv2/BioCLIP + kaynak yönü silme adayı zaman nedeniyle koşulmadı (planda yazıldı).
+- **Seçim yanlılığı:** E1/E2 seçimi (Tablo 13a) aynı doğrulama bölmesinin sağlıklı tutma sonuçlarına ve A+B makro
+  F1 ≥ 0,95 koşuluna göre yapıldı (erken durdurma yok, ama doğrulama seçimde kullanıldı); A+B doğrulama sonuçları
+  bu yüzden seçim yanlıdır.
+- **C kopya-denetimi istisnası (§12.2 ile aynı):** C yalnız `--c_testi` ile model/etiket için okundu; E'yi C'ye
+  karşı yakın-kopya denetlerken `src/11_bugwood_veri.py` C görüntülerini yalnız dHash'e okudu (etiket/model çıktısı
+  yok; eşleşme 0, sayılar etkilenmedi).
 
 **Tablo 13a — aday seçimi (tohum 42)**
 

@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Telefon fotoğrafında yaprağı zeminden ayırma (zemin tipi bilinmiyor).
 
+NOT: Uygulamanın ana akışı tek hat olarak `src/genel_maske.on_isle` kullanır (model onunla
+değerlendirildi); bu modülden yalnız `kucult` kullanılıyor. Diğer fonksiyonlar karşılaştırma/deneme içindir.
+
 Strateji (mevcut ön işleme kodu src/01_on_isleme.py yeniden kullanılır):
   1) Görüntünün kenar şeridine bakarak zemini tahmin et: açık/renksiz -> beyaz zemin yöntemi,
      koyu -> siyah zemin yöntemi (GrabCut'lı), diğer -> genel yöntem (kenar rengine uzaklık + GrabCut).
@@ -36,9 +39,15 @@ MIN_ALAN, MAKS_ALAN = 0.04, 0.92
 
 def kucult(rgb: np.ndarray, maks_kenar: int = 1024) -> np.ndarray:
     h, w = rgb.shape[:2]
+    if h == 0 or w == 0:
+        raise ValueError("Boş görüntü.")
     s = maks_kenar / max(h, w)
-    if s < 1:
-        rgb = cv2.resize(rgb, (int(round(w * s)), int(round(h * s))), interpolation=cv2.INTER_AREA)
+    if s < 1:  # aşırı en-boy oranında kısa kenar 0'a yuvarlanmasın (OpenCV assertion)
+        boyut = (max(1, int(round(w * s))), max(1, int(round(h * s))))
+        try:
+            rgb = cv2.resize(rgb, boyut, interpolation=cv2.INTER_AREA)
+        except cv2.error as e:
+            raise ValueError(f"Görüntü küçültülemedi ({w}x{h}).") from e
     return rgb
 
 

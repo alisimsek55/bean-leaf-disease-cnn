@@ -66,3 +66,20 @@ def test_siddet_duzeyi_tek_goruntu():
     assert oran == 0.0 and d == "sağlıklı"
     rgb[(m > 0) & (np.mgrid[:256, :256][1] < 128)] = KAHVE
     assert sid.siddet_duzeyi(rgb, m)[1] == "çok hastalıklı"
+
+
+def test_bos_ya_da_asinan_maske_belirsiz():
+    sid = yukle("siddet")
+    rgb = np.zeros((256, 256, 3), np.uint8)
+    assert sid.siddet_duzeyi(rgb, np.zeros((256, 256), np.uint8)) == (0.0, sid.BELIRSIZ)
+    kucuk = np.zeros((256, 256), np.uint8)
+    kucuk[100:104, 100:104] = 255  # 5x5 aşındırmada tamamen yok olur
+    assert sid.siddet_duzeyi(rgb, kucuk) == (0.0, "belirsiz")
+    assert sid.BELIRSIZ not in sid.DUZEYLER  # DUZEYLER'e dokunulmaz
+    assert sid.lezyon_orani(rgb, np.zeros((256, 256), np.uint8)) == 0.0  # doğrudan çağrı eski davranış
+
+
+def test_yeterli_yaprakta_duzey_degismez():
+    sid = yukle("siddet")
+    rgb, m, _, _ = yaprak()
+    assert sid.siddet_duzeyi(rgb, m) == (0.0, "sağlıklı")

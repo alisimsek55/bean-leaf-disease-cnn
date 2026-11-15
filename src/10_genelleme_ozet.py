@@ -103,7 +103,9 @@ def main():
                                          "C_hastalikli", "C_toplam_dogru")}}
                         for g, L in gruplar.items()}
     bak = KL / "c_bakis_kaydi.jsonl"
-    ozet["C_bakis_sayisi"] = sum(1 for _ in open(bak, encoding="utf-8")) if bak.exists() else 0
+    # "basladi" satırları okuma denemesi kaydıdır; bakış sayısı tamamlanan (ya da eski biçimli) kayıtlardır
+    ozet["C_bakis_sayisi"] = (sum(1 for sat in open(bak, encoding="utf-8")
+                                  if sat.strip() and json.loads(sat).get("durum") != "basladi") if bak.exists() else 0)
     (KL / "ozet.json").write_text(json.dumps(ozet, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(ozet["vekil"], indent=1), json.dumps(ozet["son_grup"], indent=1))
 

@@ -124,7 +124,7 @@ Testler (veri/GPU gerekmez): `pytest -q`. İki test depodaki bölmeyi denetler; 
 # ya da: powershell -ExecutionPolicy Bypass -File uygulama_baslat.ps1
 ```
 
-Model `src/tahmin.py` içinde `tahmin_et` varsa onu, yoksa `ciktilar/model_en_iyi.pt` dosyasını kullanır (`uygulama/model_adaptoru.py`; kullanılan model sayfada küçük yazıyla görünür). Model dosyası eğitimle üretilir ve depoda yoktur.
+Genel model (`ciktilar/genel_model/model.pt`, `src/tahmin.py` üzerinden) varsa onu, yoksa `ciktilar/model_en_iyi.pt` dosyasını kullanır (`uygulama/model_adaptoru.py`; kullanılan model sayfada küçük yazıyla görünür). Model dosyası eğitimle üretilir ve depoda yoktur. Model dosyaları `torch.load(weights_only=True)` ile açılır; anahtarlar ve sınıf sırası denetlenir. Fotoğraf bir kez `src/genel_maske.py` ile ön işlenir; aynı kırpım ve maske hem modele, hem şiddet ölçümüne, hem ekrana gider. Yaprak zeminden ayrılamazsa şiddet hesaplanmaz. Yükleme sınırları: 15 MB, 40 MP, en-boy oranı en çok 8:1 (`.streamlit/config.toml`).
 
 ## Veri kaynakları ve lisanslar
 

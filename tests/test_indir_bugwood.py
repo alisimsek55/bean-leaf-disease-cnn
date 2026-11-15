@@ -2,17 +2,72 @@
 import csv
 import hashlib
 import importlib.util
+import io
 import json
 from pathlib import Path
 
 import pytest
+from PIL import Image
 
 YOL = Path(__file__).resolve().parent.parent / "scripts" / "indir_bugwood.py"
 spec = importlib.util.spec_from_file_location("indir_bugwood", YOL)
 ib = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ib)
 
-JPEG = b"\xff\xd8\xff\xe0" + b"x" * 100
+def _gercek_jpeg(boyut=(16, 16)):
+    b = io.BytesIO()
+    Image.new("RGB", boyut, (40, 160, 40)).save(b, "JPEG")
+    return b.getvalue()
+
+
+JPEG = _gercek_jpeg()
+SAHTE = b"\xff\xd8\xff\xe0" + b"x" * 100  # yalniz imza dogru, icerik bozuk
+
+
+def test_jpeg_mi_gercek_kesik_ve_sahte():
+    assert ib.jpeg_mi(JPEG)
+    assert not ib.jpeg_mi(SAHTE)
+    assert not ib.jpeg_mi(JPEG[:len(JPEG) // 2])  # kesik
+    assert not ib.jpeg_mi(b"")
+
+
+def test_jpeg_mi_bayt_ve_piksel_siniri(monkeypatch):
+    monkeypatch.setattr(ib, "MAKS_BOYUT", len(JPEG) - 1)
+    assert not ib.jpeg_mi(JPEG)
+    monkeypatch.undo()
+    monkeypatch.setattr(ib, "MAKS_PIKSEL", 10)  # 16x16 > 10
+    assert not ib.jpeg_mi(JPEG)
+
+
+def test_mevcut_bozuk_dosya_yeniden_indirilir(tmp_path, monkeypatch):
+    monkeypatch.setattr(ib, "NUMARALAR", ["1111111", "2222222"])
+    raw = tmp_path / "data" / "raw_bugwood"
+    raw.mkdir(parents=True)
+    (raw / "1111111.jpg").write_bytes(SAHTE)  # bozuk mevcut -> yeniden indir
+    (raw / "2222222.jpg").write_bytes(JPEG)  # saglam mevcut -> indirilmez
+    resimler = []
+
+    def sahte(url):
+        if "api.bugwood" in url:
+            return 200, b"{}"
+        resimler.append(url)
+        return 200, JPEG
+
+    s = ib.main(str(tmp_path), getir_f=sahte, bekle=0)
+    assert [x["durum"] for x in s] == ["ok", "ok"]
+    assert len(resimler) == 1 and "1111111" in resimler[0]
+    assert (raw / "1111111.jpg").read_bytes() == JPEG
+
+
+def test_indirilen_bozuk_jpeg_ok_sayilmaz_ve_yazilmaz(tmp_path, monkeypatch):
+    monkeypatch.setattr(ib, "NUMARALAR", ["1111111"])
+
+    def sahte(url):
+        return (200, b"{}") if "api.bugwood" in url else (200, SAHTE)
+
+    s = ib.main(str(tmp_path), getir_f=sahte, bekle=0)
+    assert s[0]["durum"] == "hata_200"
+    assert not (tmp_path / "data" / "raw_bugwood" / "1111111.jpg").exists()
 
 
 def test_numara_listesi_77_benzersiz_ve_gecerli():

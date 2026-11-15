@@ -1,0 +1,3 @@
+[server]
+# MB; uygulama/model_adaptoru.py MAKS_BAYT ile aynı (15 MB)
+maxUploadSize = 15

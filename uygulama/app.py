@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Fasulye yaprağı hastalık karar destek aracı (yerel web uygulaması).
+r"""Fasulye yaprağı hastalık karar destek aracı (yerel web uygulaması).
 
 Çalıştırma:  .\.venv\Scripts\python -m streamlit run uygulama\app.py
 """
@@ -28,6 +28,10 @@ ETKEN = {
     "hale_yanikligi": "Pseudomonas syringae pv. phaseolicola (bakteri)",
 }
 DUZEY_RENK = {"sağlıklı": "green", "az hastalıklı": "orange", "çok hastalıklı": "red"}
+SIDDET_YOK_METNI = {
+    ma.HESAPLANAMADI: "Şiddet hesaplanamadı: yaprak zeminden ayrılamadı.",
+    ma.BELIRSIZ: "Şiddet belirlenemedi: değerlendirilebilecek yeterli yaprak alanı bulunamadı.",
+}
 
 BAKTERIYEL_ONERI = [
     "Hastalıklı yaprak ve bitki artıklarını tarladan uzaklaştırın; tarlada bırakmayın veya gömün/yakın.",
@@ -49,8 +53,16 @@ def oneri_listesi(sinif):
 
 
 @st.cache_resource(show_spinner="Model yükleniyor...")
-def _hazirla():
-    return ma.model_adi()
+def _hazirla(anahtar):
+    """Modeli bir kez yükler; anahtar (yol, mtime) değişince (yeni model dosyası) yeniden yükler.
+    Not: parametre adı alt çizgiyle başlamamalı; Streamlit `_` ile başlayan parametreleri hash'lemez."""
+    return ma.model_yukle()
+
+
+def _model_anahtari():
+    """İki model dosyasının (yol, mtime) bilgisi: biri değişince önbellek yenilenir."""
+    return tuple((str(yol), yol.stat().st_mtime_ns if yol.exists() else None)
+                 for yol in (ma.GENEL_MODEL, ma.ESKI_MODEL))
 
 
 TUR_NOTU = ("Tür ayrımı (adi yanıklık / hale) sınırlı veriyle eğitildi ve farklı koşullardaki "
@@ -89,14 +101,21 @@ def goster(r: ma.Sonuc):
             st.caption(TUR_NOTU)
     with sag:
         st.subheader("Hastalık şiddeti")
-        renk = DUZEY_RENK[r.duzey]
-        st.markdown(f"### :{renk}[{r.duzey.capitalize()}]")
-        st.write(f"Lezyon (yeşil olmayan doku) oranı: **%{100 * r.lezyon_orani:.1f}**")
-        st.caption("Yaklaşık, renk tabanlı bir ölçüdür: < %0,5 sağlıklı, < %13 az hastalıklı, "
-                   "≥ %13 çok hastalıklı. Uzman değerlendirmesi yerine geçmez.")
+        if not r.siddet_var:
+            st.markdown("### :gray[Hesaplanamadı]" if r.duzey == ma.HESAPLANAMADI
+                        else "### :gray[Belirlenemedi]")
+            st.write(SIDDET_YOK_METNI.get(r.duzey, "Şiddet belirlenemedi."))
+            st.caption("Yaprağı sade (beyaz ya da koyu) bir zemine koyup, tek başına ve iyi ışıkta "
+                       "fotoğraflayıp tekrar deneyin.")
+        else:
+            renk = DUZEY_RENK[r.duzey]
+            st.markdown(f"### :{renk}[{r.duzey.capitalize()}]")
+            st.write(f"Lezyon (yeşil olmayan doku) oranı: **%{100 * r.lezyon_orani:.1f}**")
+            st.caption("Yaklaşık, renk tabanlı bir ölçüdür: < %0,5 sağlıklı, < %13 az hastalıklı, "
+                       "≥ %13 çok hastalıklı. Uzman değerlendirmesi yerine geçmez.")
         if hasta and r.duzey == "sağlıklı":
             st.info("Model hastalık görüyor ancak belirgin renk lezyonu bulunamadı; erken evre olabilir.")
-        if not hasta and r.duzey != "sağlıklı":
+        if not hasta and r.duzey in ("az hastalıklı", "çok hastalıklı"):
             st.info("Model sağlıklı diyor ama renk kuralı yaprakta yeşil olmayan bölgeler buldu "
                     f"({r.duzey}; kuruma, sararma, gölge veya alt yüz olabilir). Fotoğrafı kontrol edin.")
 
@@ -104,11 +123,16 @@ def goster(r: ma.Sonuc):
     with c1:
         st.image(r.orijinal, caption="Yüklenen fotoğraf", use_container_width=True)
     with c2:
+        baslik = (f"Modele giden yaprak ({r.maske_yontemi})" if r.ayirma_basarili
+                  else "Modele giden görüntü (yaprak ayrılamadı, tüm fotoğraf)")
         st.image(cv2.resize(r.yaprak, (384, 384), interpolation=cv2.INTER_CUBIC),
-                 caption=f"Ayrılan yaprak ({r.maske_yontemi})", use_container_width=True)
+                 caption=baslik, use_container_width=True)
     with c3:
-        st.image(cv2.resize(r.lezyon_katmani, (384, 384), interpolation=cv2.INTER_NEAREST),
-                 caption="Lezyon bölgeleri (mor)", use_container_width=True)
+        if r.siddet_var:
+            st.image(cv2.resize(r.lezyon_katmani, (384, 384), interpolation=cv2.INTER_NEAREST),
+                     caption="Lezyon bölgeleri (mor)", use_container_width=True)
+        else:
+            st.info("Lezyon haritası gösterilmiyor (şiddet ölçülemedi).")
 
     st.subheader("Öneriler")
     if hasta and not emin:
@@ -125,15 +149,29 @@ def main():
     st.set_page_config(page_title="Fasulye Yaprağı Hastalık Denetimi", page_icon="🌿", layout="wide")
     st.title("Fasulye Yaprağı Hastalık Denetimi")
     st.write("Bir fasulye yaprağının fotoğrafını yükleyin; hastalık belirtisi, şiddeti ve genel öneriler gösterilir.")
-    _hazirla()
     if not ma.model_var():
         st.error("Model dosyası bulunamadı (ciktilar/genel_model/model.pt). Önce modeli eğitin.")
         return
-    dosya = st.file_uploader("Yaprak fotoğrafı (JPG, PNG)", type=["jpg", "jpeg", "png", "webp"])
+    try:
+        _hazirla(_model_anahtari())
+    except Exception as e:
+        st.error(f"Model yüklenemedi: {e}")
+        return
+    if ma.genel_model_hatasi():
+        st.warning(f"Genel model yüklenemedi ({ma.genel_model_hatasi()}); eski model (FasulyeCNN) kullanılıyor.")
+    limit_mb = ma.MAKS_BAYT // (1024 * 1024)
+    dosya = st.file_uploader(f"Yaprak fotoğrafı (JPG, PNG, WEBP; en çok {limit_mb} MB)",
+                             type=["jpg", "jpeg", "png", "webp"])
     if dosya is not None:
+        if dosya.size > ma.MAKS_BAYT:
+            st.error(f"Dosya çok büyük ({dosya.size / 1024 / 1024:.1f} MB). En çok {limit_mb} MB yükleyebilirsiniz.")
+            return
         with st.spinner("Yaprak ayrılıyor ve analiz ediliyor..."):
             try:
                 r = ma.analiz_et(dosya)
+            except ma.GoruntuHatasi as e:
+                st.error(str(e))
+                return
             except Exception as e:
                 st.error(f"Fotoğraf işlenemedi: {e}")
                 return

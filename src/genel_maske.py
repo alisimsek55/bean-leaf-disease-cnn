@@ -96,20 +96,32 @@ def on_isle(rgb: np.ndarray, zemin: str = "otomatik"):
 
     bilgi = {"zemin": kullanılan yöntem, "basarili": bool, "alan_orani": maske alanı / görüntü}.
     Hiçbir durumda istisna fırlatmaz (maskeleme hatasında tüm görüntüye geri döner)."""
-    H, W = rgb.shape[:2]
-    s = _on.MAKS_KENAR / max(H, W)
-    if s < 1:
-        rgb = cv2.resize(rgb, (int(round(W * s)), int(round(H * s))), interpolation=cv2.INTER_AREA)
+    kullanilan, boyut_tamam = "hata", True
     try:
-        m, kullanilan = maske_hesapla(rgb, zemin)
+        H, W = rgb.shape[:2]
+        s = _on.MAKS_KENAR / max(H, W)
+        if s < 1:  # aşırı en-boy oranında bir kenar 0'a yuvarlanmasın
+            rgb = cv2.resize(rgb, (max(1, int(round(W * s))), max(1, int(round(H * s)))),
+                             interpolation=cv2.INTER_AREA)
+    except Exception as e:  # noqa: BLE001 - boyutlandırma hatasında mevcut "başarısız" yoluna git
+        kullanilan, boyut_tamam = f"hata:{type(e).__name__}", False
+    try:
+        if not boyut_tamam:
+            raise RuntimeError("boyutlandırma başarısız")
+        m, kullanilan_z = maske_hesapla(rgb, zemin)
+        kullanilan = kullanilan_z
         oran = float(m.mean())
         if oran >= MIN_ALAN_ORANI and int(m.sum()) >= _on.MIN_YAPRAK_PIKSEL:
             g, gm = _on.kirp_ve_boyutlandir(rgb, m)
             if g is not None:
                 return g, gm, {"zemin": kullanilan, "basarili": True, "alan_orani": round(oran, 4)}
     except Exception as e:  # noqa: BLE001 - tahmin her koşulda çalışmalı
-        kullanilan = f"hata:{type(e).__name__}"
-    g, gm = tam_goruntu_kare(rgb)
+        if boyut_tamam:
+            kullanilan = f"hata:{type(e).__name__}"
+    try:
+        g, gm = tam_goruntu_kare(rgb)
+    except Exception:  # noqa: BLE001 - son çare: boş kare (istisna fırlatma)
+        g, gm = np.zeros((KAYDET_BOYUT, KAYDET_BOYUT, 3), np.uint8), np.full((KAYDET_BOYUT, KAYDET_BOYUT), 255, np.uint8)
     return g, gm, {"zemin": kullanilan, "basarili": False, "alan_orani": 1.0}
 
 

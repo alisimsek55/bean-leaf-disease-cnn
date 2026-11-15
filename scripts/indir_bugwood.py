@@ -25,6 +25,9 @@ import sys
 import time
 import urllib.error
 import urllib.request
+from io import BytesIO
+
+from PIL import Image
 
 NUMARALAR = [
     "1634010", "5357506", "5357504", "5365235", "5363936", "5363934", "5363932", "5363930", "5363580", "5363006",
@@ -42,6 +45,7 @@ DETAY_URL = "https://www.ipmimages.org/browse/detail.cfm?imgnum={n}"
 LISANS = "CC BY 3.0 US veya CC BY-NC 3.0 US (ipmimages.org/about/image-usage; goruntu basina alan API'de yok)"
 BEKLE = 1.0
 MAKS_BOYUT = 20 * 1024 * 1024
+MAKS_PIKSEL = 50_000_000  # çözülmeden önce başlıktan okunan genişlik*yükseklik üst sınırı (bozuk/bomba dosya)
 ALANLAR = ["numara", "fotografci", "kurum", "lisans", "konak", "aciklama", "tur", "konu", "url", "detay_url",
            "atif", "sha256", "bayt", "durum"]
 
@@ -116,7 +120,19 @@ def getir_tekrarli(getir_f, url, deneme=3, bekle=BEKLE):
 
 
 def jpeg_mi(veri):
-    return veri[:3] == b"\xff\xd8\xff"
+    """Gerçekten çözülebilen JPEG mi: bayt ve piksel sınırı, imza, Image.verify() ve yeniden açıp load()."""
+    if not veri or len(veri) > MAKS_BOYUT or veri[:3] != b"\xff\xd8\xff":
+        return False
+    try:
+        with Image.open(BytesIO(veri)) as im:
+            if im.format != "JPEG" or im.width * im.height > MAKS_PIKSEL:
+                return False
+            im.verify()
+        with Image.open(BytesIO(veri)) as im:  # verify() sonrası nesne kullanılamaz; yeniden aç ve tam çöz
+            im.load()
+        return True
+    except Exception:  # noqa: BLE001 - bozuk/kesik dosya: geçersiz say
+        return False
 
 
 def main(kok, getir_f=getir, bekle=BEKLE):
@@ -133,11 +149,12 @@ def main(kok, getir_f=getir, bekle=BEKLE):
         time.sleep(bekle)
         satir = meta_satiri(n, api)
         yol = os.path.join(hedef, f"{n}.jpg")
-        if os.path.exists(yol):
+        veri, kod = b"", 0
+        if os.path.exists(yol) and os.path.getsize(yol) <= MAKS_BOYUT:
             with open(yol, "rb") as f:
                 veri = f.read()
             kod = 200
-        else:
+        if not (kod == 200 and jpeg_mi(veri)):  # yok, çok büyük ya da bozuk mevcut dosya: yeniden indir
             kod, veri = getir_tekrarli(getir_f, GORUNTU_URL.format(n=n), bekle=bekle)
             time.sleep(bekle)
             if kod == 200 and jpeg_mi(veri):

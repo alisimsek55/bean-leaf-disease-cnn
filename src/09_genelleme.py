@@ -225,6 +225,13 @@ def bugwood_yari(e, tohum=TOHUM):
     return grup_bol_tam(e, 0.5, tohum)
 
 
+def c_kaydi_yaz(kayit, yol=None):
+    """C (Embrapa) bakış kaydına bir satır ekler (zaman otomatik). C okunmadan önce 'basladi', sonuçla 'tamamlandi'."""
+    yol = yol or KLASOR / "c_bakis_kaydi.jsonl"
+    with open(yol, "a", encoding="utf-8") as f:
+        f.write(json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), **kayit}, ensure_ascii=False) + "\n")
+
+
 def web_bol(web, tohum=TOHUM, oran=0.3):
     """D (web) için grup bazlı, sınıf katmanlı %70/%30 bölme (A/B bölmesiyle aynı mantık)."""
     rng = np.random.default_rng(tohum)
@@ -239,7 +246,15 @@ def web_bol(web, tohum=TOHUM, oran=0.3):
             dog.append(x)
             n += int((g.grup == x).sum())
     m = web.grup.isin(dog)
-    return web[~m].reset_index(drop=True), web[m].reset_index(drop=True)
+    egt, dgr = web[~m].reset_index(drop=True), web[m].reset_index(drop=True)
+    # Algoritma değişmedi; yalnız büyük gruplar bir tarafı boş bırakmasın diye denetlenir (sınıf bazında).
+    for s, g in web.groupby("sinif"):
+        n_dog = int(m[g.index].sum())
+        if n_dog == 0 or n_dog == len(g):
+            raise ValueError(f"web_bol: '{s}' sınıfında {len(g) - n_dog} eğitim / {n_dog} doğrulama örneği çıktı; "
+                             f"büyük gruplar bir tarafı boş bırakıyor (grup sayısı: {g.grup.nunique()}, oran={oran}). "
+                             "Grupları küçültün/oranı ya da tohumu değiştirin.")
+    return egt, dgr
 
 
 def tahminler(model, X, isik, cihaz, bs=64, tta=False):
@@ -401,6 +416,7 @@ def calistir(a):
                     "ortalama": IMAGENET_ORT, "std": IMAGENET_STD, "siniflar": SINIFLAR,
                     "ayarlar": vars(a)}, kl / "model.pt")
     if a.c_testi:
+        c_kaydi_yaz({"durum": "basladi", "deney": kl.name, "model": str(kl / "model.pt")})  # okumadan ÖNCE deneme kaydı
         tum = pd.concat([bolme_oku("egitim"), bolme_oku("dogrulama")], ignore_index=True)
         dc = tum[tum.kaynak == C_KAYNAK].reset_index(drop=True)
         Pc = tahminler(model, goruntuleri_yukle(dc, boyut=a.boyut), a.isik, cihaz)
