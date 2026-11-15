@@ -3,6 +3,9 @@
 --extra-index-url https://download.pytorch.org/whl/cu128
 # Projede doğrudan kullanılanlar: torch, torchvision, numpy, opencv-python, scikit-learn, matplotlib, pandas, pillow
 # (requests, huggingface_hub: önceki veri indirme aşamasından)
+# uygulama/ (yerel web arayüzü): streamlit (+ bağımlılıkları altair, pydeck, pyarrow, protobuf, watchdog...); playwright yalnız ekran görüntüsü içindir
+streamlit==1.67.0
+playwright==1.65.2
 anyio==4.16.0
 certifi==2026.10.23
 charset-normalizer==3.5.2

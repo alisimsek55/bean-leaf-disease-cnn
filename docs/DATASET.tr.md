@@ -204,3 +204,44 @@ bilgisi `data\etiketler.csv` içinde.
   kopya ayıklama, `data\raw`, `data\raw_ek`, `etiketler.csv`), `yakin_kopya.py` (dHash + seri çekim grupları), `bolme_denetimi.py` (eğitim/doğrulama sızıntı denetimi),
   `temas_sayfasi.py` (görsel kontrol sayfaları). İndirilen arşivlerdeki hiçbir betik çalıştırılmadı; arşiv içi
   yollar dosya yazarken kullanılmadı.
+
+## 9. Ek CBB kaynağı E: Bugwood / IPM Images (2026-11-15)
+
+| | |
+|---|---|
+| Kaynak | **Bugwood Center for Invasive Species and Ecosystem Health — IPM Images** (University of Georgia), konu 11171 "Common bacterial blight of beans" (*Xanthomonas axonopodis* pv. *phaseoli*), 77 görüntü |
+| URL | https://www.ipmimages.org/ (görüntü: `https://bugwoodcloud.org/images/1536x1024/<numara>.jpg`; metadata: `https://api.bugwood.org/rest/api/image.json?imgnum=<numara>&include=descriptor,description`) |
+| Lisans | Kullanım şartları (https://www.ipmimages.org/about/image-usage): görüntüler **CC BY 3.0 US** ya da **CC BY-NC 3.0 US**; eğitim amaçlı kullanım atıfla serbest. Görüntü başına lisans alanı API'de yok ve görüntü detay sayfası otomatik istemcilere 403 verdiği için (zorlanmadı) lisans sütununa site koşulu yazıldı. Bu proje ticari değildir, iki lisansa da uyar. |
+| Atıf biçimi | "Fotoğrafçı, Kurum, Bugwood.org" — her görüntünün atfı `data/bugwood_metadata.csv` → `atif` sütununda. Alınan 15 görüntünün atıfları: Howard F. Schwartz, Colorado State University, Bugwood.org (13); Agriculture Canada, Ottawa, Agriculture and Agri-Food Canada, Bugwood.org (1: 0454012); R.W. Samson, Purdue University, Bugwood.org (1: 5402949). |
+| Depoda | Yalnız `scripts/indir_bugwood.py`, `data/bugwood_metadata.csv` (numara, fotoğrafçı, kurum, lisans, konak, açıklama, url, atıf, SHA-256) ve `data/bugwood_ayiklama.csv`. Görüntüler (`data/raw_bugwood/`, `data/islenmis_bugwood/`) **depoya konmaz** (`.gitignore`). |
+
+İndirme: `python -I scripts/indir_bugwood.py <proje_koku>`; istekler arasında 1 sn beklenir, varsayılan
+User-Agent değiştirilmez, yalnız bağlantı hatasında (HTTP yanıtı yokken) en çok 3 deneme yapılır; 403/404 zorlanmaz.
+77/77 görüntü indi (1536 px'lik sürüm, çoğu ~1536×1024), SHA-256'ları kaydedildi.
+
+**Ayıklama (`data/bugwood_ayiklama.csv`, her görüntüye temas sayfasında ve gerektiğinde büyük boyutta bakılarak):**
+yalnız **fasulye (*P. vulgaris*) yaprağında görünür CBB belirtisi** olan kareler alındı.
+
+| Karar | Görüntü | Neden |
+|---|---|---|
+| Alındı | **15** (kırpmalarla **20 örnek**) | Yakın çekim yaprak/yaprakçık; sarı kenarlı kahverengi nekroz, kenar nekrozu, su emmiş lezyon |
+| Çıkarıldı | 52 | Tarla genel görünümü: 1999 Burlington (Colorado) deneme parselleri (45 kare), kanopi/ufuk kareleri (7) |
+| Çıkarıldı | 3 + 1 | Bakla (1634010, 0454014, 5363933), tohum (0656088) |
+| Çıkarıldı | 1 | Konak fasulye değil: cowpea (5361117, açıklamada yazıyor) |
+| Çıkarıldı | 1 | Konak belirtilmemiş, yapraklar üst üste (5411466) |
+| Çıkarıldı | 1 | Karışık enfeksiyon: CBB + bakteriyel kahverengi leke (5365235) |
+| Çıkarıldı | 1 | Kanopi + bakla, tek yaprak sınırı yok (0454013) |
+
+- **Kırpma:** 8 görüntüde elle kırpma yapıldı (koordinatlar CSV'de, orijinal piksel); 5 görüntüden ikişer yaprak
+  alındı (aynı grupta). Bugwood'un sağ alttaki numara etiketi (siyah kutu) bir kaynak imzası olduğu için her karenin
+  **alt %7'si kesildi**.
+- **Gruplama:** aynı fotoğrafçının ardışık numaralı serileri (ör. 5361436–5361439, 5363005–5363007) aynı yaprak/
+  sahne olabileceği için elle aynı `seri`ye alındı, ayrıca dHash (≤ 20) bağlantısı → **8 grup** (2, 3, 5, 4, 1, 3, 1, 1 örnek).
+- **Kopya denetimi:** A/B/C/D'nin hiçbir görüntüsüyle yakın kopya yok (dHash ≤ 20: 0). Embrapa (C) sızıntısı yok.
+- **Ön işleme** (`src/11_bugwood_veri.py`): `genel_maske.on_isle(otomatik)`; 6'sı "siyah", 14'ü "genel" zemin
+  yöntemiyle maskelendi, başarısız 0. Gözle kontrol (`ciktilar/genel_model/bugwood_maske_kontrol.jpg`): çoğu makul;
+  ancak yaprağı kadrajı dolduran yakın çekimlerde maske kadraj kenarıyla kesik bir yaprak parçası veriyor
+  (5361436, 5363930, 5357503_b; sonuncusunda lezyonun bir kısmı maskenin dışında kaldı), 5402949'da iki yaprak birlikte.
+- **E küçük:** 20 örnek / 8 grup. Konular tek bir hastalık uzmanının (H. F. Schwartz) arşivinde yoğunlaşıyor (20'nin 17'si).
+  Bu, CBB için ikinci bir *bağımsız* kaynak sayılabilir (A: Bangladeş, koparılmış yaprak, siyah kumaş; E: ABD/Kanada,
+  çoğu tarlada yaprak üzerinde), ama istatistiksel gücü çok sınırlıdır.

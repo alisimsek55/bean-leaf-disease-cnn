@@ -356,7 +356,7 @@ sonuç daha da kötü çıktı.
 ## 7. Hastalık şiddeti tahmini (kural tabanlı) — `src/06_siddet_tahmini.py`
 
 **Bu bir uzman etiketi değildir.** Veri setinde şiddet etiketi yok; hocanın "sağlıklı / az hastalıklı /
-hastalıklı yaprak" gösterme isteği için piksel oranına dayalı yaklaşık bir ölçü üretildi.
+çok hastalıklı yaprak" gösterme isteği için piksel oranına dayalı yaklaşık bir ölçü üretildi.
 
 **Yöntem:** 256×256 işlenmiş görüntüde yaprak maskesi 5×5 aşındırıldı (kenar karışımı atıldı), 3×3 medyan
 süzgeci uygulandı. Bir piksel **lezyon** sayıldı eğer:
@@ -370,11 +370,11 @@ süzgeci uygulandı. Bir piksel **lezyon** sayıldı eğer:
 **Eşikler (veriye bakılarak):**
 - **T1 = %0,5** — sağlıklı sınıfın lezyon oranının %99'luk dilimi (%0,47), yukarı doğru %0,5'e yuvarlandı.
 - **T2 = %13** — CBB + hale sınıflarının lezyon oranı medyanı (%13,09), %1'e yuvarlandı.
-- Düzey: oran < %0,5 → **sağlıklı**; %0,5 ≤ oran < %13 → **az hastalıklı**; oran ≥ %13 → **hastalıklı**.
+- Düzey: oran < %0,5 → **sağlıklı**; %0,5 ≤ oran < %13 → **az hastalıklı**; oran ≥ %13 → **çok hastalıklı**.
 
-**Düzey başına sayılar (2451 görüntü):** sağlıklı 1716, az hastalıklı 347, hastalıklı 388.
+**Düzey başına sayılar (2451 görüntü):** sağlıklı 1716, az hastalıklı 347, çok hastalıklı 388.
 
-| Sınıf (kaynak etiketi) | "sağlıklı" | "az hastalıklı" | "hastalıklı" | Lezyon oranı medyanı |
+| Sınıf (kaynak etiketi) | "sağlıklı" | "az hastalıklı" | "çok hastalıklı" | Lezyon oranı medyanı |
 |---|---|---|---|---|
 | CBB (533) | 4 | 161 | 368 | %18,2 |
 | Hale (231) | 41 | 170 | 20 | %6,8 |
@@ -472,4 +472,227 @@ Diğer: `ciktilar/model_en_iyi.pt` (ana model ağırlıkları + normalizasyon), 
 5. Sınıf ağırlıklı kayıp ve veri artırmayla 26 epoch eğitildi (en iyi epoch 11).
 6. Doğrulama: doğruluk %96,6, makro F1 %94,1 (sızıntılı ilk bölmede %97,6 / %95,5 idi).
 7. Kontroller: siluet %52,5; kaynak tahmini %99,2; görülmemiş kaynaktaki CBB %8 → başarı kaynak karışmasıyla şişmiş.
-8. Kural tabanlı şiddet: sağlıklı (<%0,5 lezyon), az hastalıklı (%0,5–13), hastalıklı (≥%13).
+8. Kural tabanlı şiddet: sağlıklı (<%0,5 lezyon), az hastalıklı (%0,5–13), çok hastalıklı (≥%13).
+
+---
+
+## 12. Kaynak dışı genelleme denemesi (transfer öğrenmesi + kaynak imzasını kırma) — 2026-11-15
+
+Betikler: `scripts/indir_web.py`, `src/genel_maske.py`, `src/08_web_veri.py`, `src/09_genelleme.py`,
+`src/10_genelleme_ozet.py`, `src/tahmin.py`. Çıktılar: `ciktilar/genel_model/` (deney klasörleri, `ozet.json`,
+`on_kayit_plani.txt`, `c_bakis_kaydi.jsonl`, `ilerleme.md`, dağıtılan `model.pt`).
+
+**Amaç:** Kaynak C (Embrapa) eğitimde ve seçimde hiç kullanılmadan C'nin 25 CBB yaprağında anlamlı başarı
+(hedef ≥ %70), A+B doğrulamasında yüksek başarıyı koruyarak. **Sonuç: hedefe ulaşılamadı.** Seçilen yöntem C'de
+25 CBB'den ortalama 0,7'sini doğru bildi (3 tohum: 1, 0, 1); C'deki CBB yaprakları neredeyse tamamen "hale"
+dendi. Aşağıda ne denendiği ve neden işe yaramadığı anlatılıyor.
+
+### 12.1 Eklenen veri: kaynak D (PlantWild web görüntüleri)
+- Açık lisanslı başka bir CBB yaprak verisi bulunamadı (DATASET §7'deki tarama + yeniden arama: Zenodo, Mendeley,
+  iNaturalist [*Xanthomonas phaseoli* için 1 gözlem], PlantSeg, PlantWild). **CBB için ikinci kaynak yok.**
+- Hale ve sağlıklı için ikinci kaynak eklendi: **PlantWild** (Wei T. ve ark., ACM MM 2024;
+  https://huggingface.co/datasets/uqtwei2/PlantWild; **CC BY-NC-ND 4.0**: ticari olmayan kullanım; işlenmiş görüntüler
+  dağıtılmaz, yalnız yerel eğitimde kullanıldı; `data/raw_web/` ve `data/islenmis_web/` git dışında). v1
+  `bean halo blight` (115), v2 `bean halo blight` (56), v1 `bean leaf` (258 → sağlıklı). Arşivin tamamı
+  indirilmedi: HTTP Range ile yalnız bu klasörler çekildi, her üye CRC32 ile doğrulandı, SHA-256 kaydedildi, arşiv
+  içi yollar dosya yazarken kullanılmadı (`scripts/indir_web.py`).
+- Temizlik (`src/08_web_veri.py`): 57 birebir kopya (v1/v2 çakışması) atıldı; dHash (≤ 20) ile A/B/C'nin herhangi
+  bir görüntüsüne yakın kopya **0** (Embrapa kopyası yok); 1 görüntüde maskeleme başarısız → **hale 114, sağlıklı
+  257**. Grup bazlı %70/%30 bölündü (doğrulama: hale 35, sağlıklı 78).
+- Web görüntüleri tarla/sahne fotoğrafı (birden çok yaprak, bakla, bitki). Zemin bilinmediği için yeni bir **genel
+  maske yöntemi** eklendi (`genel_maske.py`): çerçeve piksellerinden zemin türü kestirilir (beyaz → B yöntemi,
+  koyu → A yöntemi, diğer → yeşil/sarı/kahverengi renk tohumlu + merkez öncüllü GrabCut). Gözle bakılan 50 örneğin
+  çoğu makul; bir kısmında birden çok yaprak/bitki kaldı. **Etiket gürültüsü var:** web "halo blight" klasöründe
+  CBB'ye benzeyen ve alakasız (böcek, bakla, kırmızı yapraklı bitki) görüntüler var; "bean leaf" çoğunlukla bitki ya
+  da sahne fotoğrafı.
+
+### 12.2 Protokol (C'ye bakmadan önceden kayıtlı: `on_kayit_plani.txt`)
+- C yalnız `--c_testi` bayrağıyla ve seçim bittikten sonra okundu; her okuma `c_bakis_kaydi.jsonl`'e yazıldı.
+- Erken durdurma yok: 15 epoch, OneCycle öğrenme oranı, son epoch kullanıldı (doğrulama kümesi model seçiminde
+  kullanılmadı). EfficientNet-B0 (ImageNet), 224 px, AdamW 3e-4, wd 0,05, etiket yumuşatma 0,1, sınıf ağırlıklı
+  kayıp, batch 32, karışık hassasiyet.
+- **Vekil kaynak-dışı protokol** (yalnız A+B ile): sağlıklı-A eğitimden (ve doğrulamadan) tamamen çıkarılır, sonra
+  modelin sağlıklı-A doğrulama yapraklarına "sağlıklı" diyip demediği ölçülür (kısayol öğrenen model "A → CBB"
+  der). Aynısı sağlıklı-B için yapılır (kısayol: "B → hale"). Vekil skor = iki tutma oranının ortalaması; koşul:
+  A+B doğrulama makro F1 ≥ 0,95. Bu, C'deki sorunun (bir sınıfın yalnız bir kaynaktan öğrenilmesi) A+B içindeki
+  aynasıdır.
+- Zaman kısıtı nedeniyle kapsam ilk plandan daraltıldı. ConvNeXt, ışık normalizasyonu, hücre dengeli örnekleme ve
+  gradyan tersine çevirme kodda var (`--omurga convnext_tiny`, `--isik`, `--denge hucre`, `--grl`) ama
+  **koşulmadı**. Daraltma C'ye bakılmadan yapıldı ve plan dosyasına yazıldı.
+
+**Tablo 12a — Aday seçimi (tohum 42, C kullanılmadan)**
+
+| Aday | Sağlıklı-A tutma | Sağlıklı-B tutma | Vekil skor | A+B doğ. makro F1 |
+|---|---|---|---|---|
+| K1 B0, temel artırma (§5'teki artırma) | 0,713 (114/160; 45 → CBB) | 0,154 (53/344; 291 → hale) | 0,433 | 1,000 |
+| K2 B0, güçlü foto-metrik artırma* | 0,894 (143/160) | 0,160 (55/344) | 0,527 | 1,000 |
+| **K3 B0, güçlü artırma + D (web) eğitimde** | **0,931** (149/160) | **0,238** (82/344) | **0,585** | 1,000 |
+
+\* Güçlü artırma: parlaklık/kontrast/doygunluk ±0,4, ton ±0,04, gamma (e^±0,4), kanal kazançları 0,8–1,2 (beyaz
+dengesi), %15 gri, %30 çözünürlük düşürme, %30 Gauss gürültüsü, %30 bulanıklık, %30 JPEG (kalite 25–90), rastgele
+kırpma alanın %50–100'ü; geometrik artırma aynı.
+Seçilen: **K3**. Vekil sonuç bile zayıf: sağlıklı-B eğitimde yokken B'nin sağlıklı yapraklarının %76'sı hâlâ "hale"
+deniyor. Model hastalık türü kararını büyük ölçüde kaynak imzasıyla veriyor.
+
+### 12.3 Son eğitim ve C testi (her model C'de bir kez; toplam **7 C bakışı**)
+
+**Tablo 12b**
+
+| Model | Tohum | A+B doğrulama doğruluk / makro F1 | C: CBB doğru / 25 (tahmin CBB/hale/sağlıklı) | C toplam / 27 |
+|---|---|---|---|---|
+| Önceki sıfırdan CNN (§6.2c, karşılaştırma) | 42 | %99,04 / %97,97 | 2 (2/13/10) | 4 |
+| K1 B0 temel (taban) | 42 / 1 / 2 | %100 / %100 (üçü de) | 1 / 2 / 5 (1/22/2, 2/22/1, 5/19/1) | 3 / 4 / 7 |
+| **K3 B0 güçlü + web (seçilen)** | 42 / 1 / 2 | %100 / %99,86 / %100 (makro F1 %100 / %99,73 / %100) | **1 / 0 / 1** (1/23/1, 0/24/1, 1/23/1) | 3 / 2 / 3 |
+| Özel CNN (FasulyeCNN, 128 px, sıfırdan), güçlü artırma + web, 40 epoch | 42 | %95,32 / %90,96 | 3 (3/15/7) | 5 |
+
+Ortalama ± std (3 tohum): K1 C-CBB 2,7 ± 1,7 / 25; **K3 C-CBB 0,7 ± 0,5 / 25**; A+B doğrulama makro F1: K1
+1,000 ± 0, K3 0,999 ± 0,001. C'deki 2 sağlıklı görüntü (aynı yaprak) tüm modellerde doğru.
+K3'ün D doğrulama sonucu (tohum 42): hale-D 31/35, sağlıklı-D 71/78 (dağılım içi, çünkü D eğitimde de vardı).
+K1'in hiç görmediği D'de (kaynak dışı): hale-D 37/114 (64'üne **CBB** dendi), sağlıklı-D 103/257.
+
+**Yorum:**
+1. **Hastalık var/yok kararı genellendi; tür kararı genellenmedi.** C'deki CBB'lerin 24/25'i (K3, üç tohumda da)
+   "hastalıklı" (CBB ya da hale) dendi; önceki CNN'de bu sayı 15/25 idi. Bu ikili ölçüt C sonuçları alındıktan
+   **sonra** hesaplandı ve önceden kayıtlı değildir (yeni model ya da yeni C bakışı gerekmedi). Ama tür neredeyse
+   her zaman "hale".
+2. **Ayna hata:** Görülmemiş kaynaktaki hale görüntülerinde (D) K1 tersini yaptı: 114 hale görüntüsünün 64'üne
+   "CBB" dedi. Yani yeni bir kaynakta CBB/hale kararı hastalık belirtisine değil, "A'ya mı B'ye mi benziyor"
+   sorusuna dayanıyor. C'deki sarı kenarlı kahverengi nekroz, görsel olarak A'nın pembe-kırmızı lekelerinden çok
+   B'nin "hale" klasörüne (DATASET §5: çoğu CBB'ye benziyor) yakın; model bu yüzden C'ye "hale" diyor. **Etiket ve
+   kaynak karışması veriyle çözülmeden yöntemle çözülemedi:** CBB yalnız A'dan geliyor ve A'daki CBB görünümü
+   C'dekinden farklı.
+3. **Web verisi C sonucunu kötüleştirmiş görünüyor** (K1 ortalaması 2,7 → K3 0,7; n = 25 ve 3 tohumla bu fark
+   belirsiz). Olası neden: D'nin "hale" klasöründeki görüntüler gerçek *P. vulgaris* tarla görüntüleri ve bir kısmı
+   CBB'ye benziyor; bu da C'nin görünümünü "hale" tarafına çekiyor. Vekil protokol bunu öngöremedi, çünkü yalnız
+   sağlıklı tutmayı ölçüyor. CBB'yi ölçemiyor, çünkü CBB'nin ikinci bir kaynağı yok.
+4. Özel CNN'de güçlü artırma + web, A+B'de düşüşe yol açtı (makro F1 %91) ve C'de 3/25 verdi; anlamlı bir
+   iyileşme yok.
+5. C sonuçları görüldükten sonra hiçbir ayar değiştirilmedi ve yeni bir C değerlendirmesi yapılmadı.
+
+### 12.4 Dağıtılan model ve tahmin arayüzü
+- **`ciktilar/genel_model/model.pt`** = K3, tohum 42 (EfficientNet-B0, 224 px; 17,6 MB; `.gitignore` gereği depoya
+  girmez). İçeriği: `model` (state_dict), `omurga`, `boyut`, `isik`, `ortalama`, `std`, `siniflar`, `ayarlar`.
+- `src/tahmin.py → tahmin_et(goruntu, model_yolu=None, zemin="otomatik", on_islenmis=False)` şunu döndürür:
+  `{"sinif", "sinif_tr", "olasiliklar": {sınıf: p}, "on_isleme": {"zemin", "basarili", "alan_orani"}}`. Girdi dosya
+  yolu, PIL ya da RGB numpy dizisi olabilir. Ham fotoğrafta zemin otomatik seçilir, yaprak maskelenir ve kırpılır;
+  maskeleme başarısızsa tüm görüntüyle tahmin yapılır (`basarili=False`). A/B doğrulamasından 40 ham fotoğrafta
+  sonuç 40/40 doğru, zemin türü 40/40 doğru seçildi (~0,7 sn/görüntü, ilk çağrıdaki model yüklemesi dahil). C'nin ham
+  görüntüleri bu fonksiyonla ayrıca denenmedi (ek C bakışı olmasın diye).
+- **Kullanım uyarısı:** Model aynı kaynaklarda hastalıklı/sağlıklı ayrımında güçlü. Başka kaynaklarda hastalık
+  var/yok kararı makul (C'de 24/25 hastalıklı), fakat **CBB ile hale ayrımı güvenilir değil.** Uygulamada CBB ve hale
+  olasılıklarının toplamı "hastalık olasılığı" olarak gösterilmeli, tür bilgisi ikincil verilmeli.
+
+### 12.5 Şekiller
+| Dosya | Ne gösteriyor |
+|---|---|
+| `ciktilar/sekiller/genel_karisiklik_matrisleri.png` | Dağıtılan model: A+B doğrulama (727) ve C (27) karışıklık matrisleri |
+| `ciktilar/sekiller/genel_kaynak_bazinda.png` | Dağıtılan model: (sınıf, kaynak) bazında doğruluk; D doğrulama ve C dahil |
+| `ciktilar/sekiller/genel_C_sonucu.png` | C'deki 25 CBB için tahmin dağılımı: tüm son modeller/tohumlar + önceki CNN; toplam C bakışı 7 |
+
+### 12.6 Sınırlar
+- C yalnız 25 CBB görüntüsünden (+ aynı yaprağın 2 sağlıklı karesinden) oluşuyor; tek yaprak %4 fark yaratıyor.
+  Tohumlar arası fark büyük (K1: 1–5).
+- Vekil protokol CBB'nin kaynak dışı başarısını ölçemiyor (CBB tek kaynaklı); seçim yalnız "sağlıklı tutma"ya göre yapıldı.
+- Adaylar tek tohumla seçildi ve yalnız 3 aday denendi (zaman kısıtı).
+- D etiketleri gürültülü (web araması); lisansı ND olduğu için işlenmiş görüntüler paylaşılamaz.
+- A+B doğrulamasındaki %100 dağılım içi bir sonuç; §6.2'deki kaynak karışması burada da geçerli.
+- İşe yarayabilecek ama yapılamayanlar: ikinci bir açık CBB kaynağı (bulunamadı); hale etiketlerinin uzman tarafından
+  yeniden denetlenmesi; C ile aynı tür (*P. vulgaris*) ve aynı belirti görünümüne sahip eğitim verisi.
+
+## 13. İkinci CBB kaynağı (E = Bugwood / IPM Images) ile deneme — 2026-11-15
+
+Betikler: `scripts/indir_bugwood.py`, `src/11_bugwood_veri.py`, `src/09_genelleme.py` (`--bugwood yari|tam`),
+`src/10_genelleme_ozet.py`. Veri ayrıntısı ve atıflar: DATASET §9. Plan, C'ye bakılmadan önce
+`on_kayit_plani.txt`'ye "EK 2" olarak yazıldı.
+
+**Amaç:** §12'deki temel engel CBB'nin tek kaynaktan (A) gelmesiydi. İkinci bir CBB kaynağı eklenerek (1) CBB'nin
+kaynak dışı başarısı ilk kez C'siz ölçülsün, (2) C'deki CBB'ler doğru türe çekilsin. **Sonuç: (1) ölçüldü ve
+zayıf çıktı; (2) gerçekleşmedi — C'de CBB doğru tür 0/25 (üç tohumda da).**
+
+### 13.1 E verisi
+- Bugwood konu 11171 (*X. axonopodis* pv. *phaseoli*), 77 görüntü indirildi (CC BY 3.0 US / CC BY-NC 3.0 US; atıf
+  "Fotoğrafçı, Kurum, Bugwood.org"; görüntüler depoda yok).
+- Gözle ayıklama: **15 görüntü alındı, 62 çıkarıldı** (52 tarla/parsel/kanopi genel görünümü, 3 bakla, 1 tohum,
+  1 cowpea konağı, 1 konağı belirtilmemiş, 1 CBB + bakteriyel kahverengi leke karışık, 3 kanopi). 8 görüntüde elle
+  kırpma, 5'inden ikişer yaprak → **20 örnek, 8 grup** (ardışık numaralı seriler + dHash). Bugwood numara etiketi
+  (sağ alt) kaynak imzası olmasın diye alt %7 kesildi. A/B/C/D ile yakın kopya 0; maskeleme 20/20 (birkaçında
+  kadraj kenarıyla kesik yaprak parçası; DATASET §9). Örnekler: `ciktilar/sekiller/rapor/sekil_bugwood_ornekleri.png`.
+- **E çok küçük.** 20 örneğin 17'si tek fotoğrafçıdan; aşağıdaki E sayıları 10 ve 6 örnek üzerindedir, tek örnek
+  %10–17 fark yaratır.
+
+### 13.2 Protokol ve aday seçimi (C kullanılmadan)
+- **Vekil kaynak-dışı CBB testi:** E gruplu ikiye bölündü (sabit tohum): yarısı (10 örnek, 5 grup) eğitimde,
+  diğer yarısı (10 örnek, 3 grup: 5361436–39, 5363005–07, 5363580) eğitim ve doğrulamada hiç yok.
+- Her aday iki koşu: `haric_saglikli_A` + E-yarı ve `haric_saglikli_B` + E-yarı (tohum 42). Vekil skor =
+  ort(E-CBB doğruluğu, sağlıklı tutma ortalaması); koşul A+B makro F1 ≥ 0,95.
+- Taban (eğitim yok): önceki dağıtılan model (K3 t42) E-test yarısında **0/10** CBB (10'una "hale"); E'nin
+  tamamında 1/20 (19'una "hale"). C'deki ayna hata E'de de var.
+- DINOv2/BioCLIP + kaynak yönü silme adayı zaman nedeniyle koşulmadı (planda yazıldı).
+
+**Tablo 13a — aday seçimi (tohum 42)**
+
+| Aday | E-test CBB (haric_A / haric_B koşusu) | Vekil E-CBB | Sağlıklı-A tutma | Sağlıklı-B tutma | Vekil skor | A+B makro F1 |
+|---|---|---|---|---|---|---|
+| E1 = K3 + E | 3/10 (3/7/0) · 2/10 (2/7/1) | 0,25 | 0,931 | 0,352 | 0,446 | 1,000 |
+| **E2 = K3 + E + hücre dengesi** (`--denge hucre`) | 5/10 (5/5/0) · 2/10 (2/8/0) | **0,35** | 0,938 | 0,337 | **0,494** | 1,000 |
+
+(parantez: tahmin CBB/hale/sağlıklı). **Seçilen: E2.** E'nin yarısını eğitime katmak, görülmemiş E-yapraklarında
+CBB doğru tür oranını 0/10'dan 2–5/10'a çıkardı; ama yine çoğu "hale". Hücre dengesi (CBB içinde A ve E eşit pay)
+küçük bir artış verdi; 10 örnekle bu fark (5/10 ve 3/10) gürültü düzeyinde. Sağlıklı-B tutma §12'deki K3'e göre
+(0,238) biraz arttı (0,34–0,35).
+
+### 13.3 Son model ve C testi (her tohum C'de bir kez; toplam C bakışı 7 → **10**)
+E de %70/%30 gruplu bölündü (hocanın şartı). Doğrulama oranı her sınıfta ~%30:
+
+**Tablo 13b — son eğitim/doğrulama sayıları (A+B+D+E; C hariç)**
+
+| Sınıf | Eğitim | Doğrulama | Kaynak ayrıntısı (eğitim / doğrulama) |
+|---|---|---|---|
+| CBB | 368 | 160 | A 354 / 154, E 14 / 6 |
+| Hale | 241 | 104 | B 162 / 69, D 79 / 35 |
+| Sağlıklı | 1 360 | 582 | A 380 / 160, B 801 / 344, D 179 / 78 |
+| **Toplam** | **1 969** | **846** | doğrulama oranı %30,0 |
+
+**Tablo 13c — E2 son modeller**
+
+| Tohum | A+B doğrulama doğ. / makro F1 (n = 727) | Tüm doğrulama A+B+D+E doğ. / makro F1 (n = 846) | E doğrulama CBB (n = 6) | C: CBB doğru / 25 (CBB/hale/sağlıklı) | C: hastalıklı / 25 | C sağlıklı |
+|---|---|---|---|---|---|---|
+| 42 | %100 / 1,000 | %98,82 / 0,976 | 3/6 | **0** (0/22/3) | 22 | 2/2 |
+| 1 | %100 / 1,000 | %98,46 / 0,973 | 3/6 | **0** (0/22/3) | 22 | 2/2 |
+| 2 | %100 / 1,000 | %98,35 / 0,970 | 3/6 | **0** (0/24/1) | 24 | 2/2 |
+| **Ort. ± std** | %100 / 1,000 ± 0 | %98,54 ± 0,20 / 0,973 ± 0,002 | 3/6 | **0,0 ± 0,0** | 22,7 ± 0,9 | 2/2 |
+
+Karşılaştırma (§12, aynı C): K1 2,7 ± 1,7 /25, K3 0,7 ± 0,5 /25 (K3 hastalıklı 24/25). Şekil:
+`ciktilar/sekiller/genel_C_sonucu.png` (tüm 10 C bakışı).
+
+**Yorum:**
+1. **CBB'nin kaynak dışı başarısı artık C'siz ölçülebiliyor ve düşük:** vekil E-CBB 0,25–0,35; son modelde E
+   doğrulamasında 3/6. Bu, C sonucunun tesadüf olmadığını, CBB/hale kararının kaynak görünümüne bağlı kaldığını
+   bağımsız olarak doğruluyor.
+2. **E'yi eklemek C'yi düzeltmedi** (0/25). 14 eğitim örneği, 354 A örneğinin ve 241 "hale" örneğinin (çoğu CBB'ye
+   benzeyen B + tarla görüntüsü D) yanında çok az; hücre dengesi bu 14 örneği yüksek oranda tekrar örnekliyor ama
+   çeşitlilik eklemiyor. C'nin görünümü (laboratuvarda kalibrasyon kartı üzerinde tam yaprak, alt yüz damar
+   nekrozu, yaygın sararma) E'den de A'dan da farklı. "Hale" sınıfının kendisi (B ve D) CBB benzeri nekroz
+   içerdiği için (DATASET §5), görülmemiş her nekrotik yaprak "hale" tarafına düşüyor.
+3. Hastalık var/yok kararı yine genelleniyor (C'de 22–24/25 hastalıklı, sağlıklı 2/2); ama bu ikili ölçüt
+   önceden kayıtlı değildir (§12.3'teki gibi sonradan hesaplandı).
+4. A+B doğrulaması %100'de kaldı; kaynak içi başarı kaynak dışı başarı hakkında bilgi vermiyor.
+5. C sonuçları görüldükten sonra hiçbir ayar değiştirilmedi, ek C bakışı yapılmadı.
+
+### 13.4 Dağıtılan model
+- Plan gereği (C'den önce belirlendi) **`ciktilar/genel_model/model.pt` = E2, tohum 42**; önceki K3 modeli
+  `model_k3_onceki.pt` olarak saklandı. C'de E2 (0/25) K3'ten (1/25) iyi değil; dağıtım kararı C'ye göre
+  değiştirilmedi. E2'nin artısı: ABD/Kanada tarla CBB görüntülerini (E) görmüş olması (E doğrulama 3/6; K3: E'nin
+  tamamında 1/20).
+- `src/tahmin.py → tahmin_et(...)` arayüzü ve döndürdüğü sözlük değişmedi (aynı kontrol noktası anahtarları).
+- §12.4'teki kullanım uyarısı aynen geçerli: **CBB ile hale ayrımı kaynak dışında güvenilir değil**; uygulamada
+  hastalık olasılığı (CBB + hale) öne çıkarılmalı.
+
+### 13.5 Sınırlar
+- E: 20 örnek / 8 grup, büyük ölçüde tek fotoğrafçı; vekil test 10 örnek / 3 grup; E doğrulama 6 örnek / 3 grup.
+  Görüntü başına lisans alanı alınamadı (detay sayfası 403; site koşulu yazıldı).
+- Yalnız 2 aday, tek tohumla seçildi; özellik + kaynak yönü silme yaklaşımı denenmedi.
+- Yakın çekimlerde maske yaprağın tamamını değil kadraj içindeki parçasını alıyor; bu da A'dan (tam yaprak) farklı
+  bir görünüm.
+- Daha fazla yardımcı olabilecek: *P. vulgaris* üzerinde, yaprak düzeyinde, çok kaynaklı ve uzman etiketli CBB
+  ve hale verisi; "hale" sınıfının (B) uzman tarafından yeniden etiketlenmesi.

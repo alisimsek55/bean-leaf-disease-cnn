@@ -229,11 +229,26 @@ Hardware used: NVIDIA RTX 4070 Laptop GPU (8 GB), PyTorch 2.11.0+cu128. The main
 
 Tests (no data or GPU needed): `pip install -r requirements-ci.txt` plus PyTorch, then `pytest -q`. They check the model's output shape and parameter count (1,772,995), the severity function and its thresholds, the grouped split, burst-aware grouping, the leakage audit, and background masking on synthetic images. Two tests run the audit on the committed split and fail if it shares any group, file, capture-second or burst between train and validation.
 
+## Run the app
+
+`uygulama/` contains a simple Turkish-language local web app (Streamlit) for farmers: upload a leaf photo, and it separates the leaf from the background (any background), predicts the disease (class + probabilities), estimates severity (healthy / mildly diseased / severely diseased, lesion share in %), highlights lesion regions and shows short, cautious advice. If the top probability is below 60% it says it is unsure and asks for a clearer photo. It is a decision-support tool: no pesticide doses, and it points to an agronomist for a definitive diagnosis.
+
+```powershell
+.\.venv\Scripts\python -m pip install streamlit      # or: pip install -r requirements.txt
+.\.venv\Scripts\python -m streamlit run uygulama\app.py
+# or: powershell -ExecutionPolicy Bypass -File uygulama_baslat.ps1
+```
+
+It uses `tahmin_et` from `src/tahmin.py` when that exists, otherwise `ciktilar/model_en_iyi.pt` (`uygulama/model_adaptoru.py`; the model in use is shown in small print on the page). The weights come from training and are not in the repository.
+
 ## Data sources and licenses
 
 - **A.** Rashid M. R. A., Hasan M., Gani R., Kamara R., Tarin T. K., Rabbi S. F. *Image Dataset for Bean and Cowpea Plant Leaf Disease Detection and Freshness Assessment from Bangladesh.* Mendeley Data, v1 (2024). doi:[10.17632/ykvcrjffzd.1](https://doi.org/10.17632/ykvcrjffzd.1). Paper: *Data in Brief* (2024), doi:[10.1016/j.dib.2024.111023](https://doi.org/10.1016/j.dib.2024.111023). License: CC BY 4.0.
 - **B.** Mojumdar M. U., Dip S. D., Alahi T. E., Tonmoy S. *Bean Health and Disease Dataset: A Resource for Agricultural Research.* Mendeley Data, v3 (2025). doi:[10.17632/3km9d246z2.3](https://doi.org/10.17632/3km9d246z2.3). License: CC BY 4.0.
 - **C.** Barbedo J. G. A. et al. *Embrapa PDDB: Base de Imagens de Sintomas de Doenças de Plantas.* Redape Dataverse. doi:[10.48432/XA1OVL](https://doi.org/10.48432/XA1OVL). Paper: Barbedo et al., *IEEE Latin America Transactions* 16(6), 2018, doi:[10.1109/TLA.2018.8444395](https://doi.org/10.1109/TLA.2018.8444395). License: CC BY-NC 4.0.
+- **E (extra, generalization experiment only).** Bugwood / IPM Images, subject 11171 "Common bacterial blight of beans" (https://www.ipmimages.org/). CC BY 3.0 US / CC BY-NC 3.0 US; credit: "Photographer, Organization, Bugwood.org" (per-image credits in `data/bugwood_metadata.csv`). 15 of 77 images (20 crops) were used; images are not in the repository, `scripts/indir_bugwood.py` downloads them.
+
+**Note (2026-11-15):** A second CBB source (E) was added and the pretrained general model was retrained. Validation on the known sources stays at 100%, but on the unseen Embrapa CBB leaves the correct type is 0/25 (3 seeds; 22-24/25 are still called "diseased"). CBB vs halo separation is not reliable outside the training sources. Details (Turkish): [docs/RESULTS.tr.md](docs/RESULTS.tr.md) sections 12-13.
 
 The figures in `ciktilar/sekiller/` contain images derived from these datasets (masked and cropped leaf photos). They are shared here with attribution, under the same license terms, for non-commercial purposes only. The CSV files in `data/` contain only metadata (file names, classes, sources, licenses, hashes, group IDs), no images.
 

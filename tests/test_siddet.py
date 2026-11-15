@@ -26,13 +26,13 @@ def test_renk_esikleri_belgedekiyle_ayni():
     assert sid.H_SARI == 27
     assert sid.S_RENKLI == 60
     assert sid.V_KOYU == 45
-    assert sid.DUZEYLER == ["sağlıklı", "az hastalıklı", "hastalıklı"]
+    assert sid.DUZEYLER == ["sağlıklı", "az hastalıklı", "çok hastalıklı"]
 
 
 @pytest.mark.parametrize("oran,beklenen", [
     (0.0, "sağlıklı"), (0.0049, "sağlıklı"),
     (0.005, "az hastalıklı"), (0.1299, "az hastalıklı"),
-    (0.13, "hastalıklı"), (0.9, "hastalıklı"),
+    (0.13, "çok hastalıklı"), (0.9, "çok hastalıklı"),
 ])
 def test_duzey_esikleri(oran, beklenen):
     assert sid.duzey(oran, T1, T2) == beklenen
@@ -50,7 +50,7 @@ def test_yarisi_kahverengi_hastalikli():
     rgb[(m > 0) & (xx < 128)] = KAHVE
     oran = sid.lezyon_orani(rgb, m)
     assert 0.35 < oran < 0.65
-    assert sid.duzey(oran, T1, T2) == "hastalıklı"
+    assert sid.duzey(oran, T1, T2) == "çok hastalıklı"
 
 
 def test_kucuk_leke_az_hastalikli():
@@ -59,3 +59,10 @@ def test_kucuk_leke_az_hastalikli():
     oran = sid.lezyon_orani(rgb, m)
     assert T1 <= oran < T2
     assert sid.duzey(oran, T1, T2) == "az hastalıklı"
+
+def test_siddet_duzeyi_tek_goruntu():
+    rgb, m, _, _ = yaprak()
+    oran, d = sid.siddet_duzeyi(rgb, m)
+    assert oran == 0.0 and d == "sağlıklı"
+    rgb[(m > 0) & (np.mgrid[:256, :256][1] < 128)] = KAHVE
+    assert sid.siddet_duzeyi(rgb, m)[1] == "çok hastalıklı"

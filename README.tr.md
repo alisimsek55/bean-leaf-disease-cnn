@@ -114,11 +114,26 @@ Donanım: NVIDIA RTX 4070 Laptop (8 GB), PyTorch 2.11.0+cu128; ana model 901 sn'
 
 Testler (veri/GPU gerekmez): `pytest -q`. İki test depodaki bölmeyi denetler; eğitim ile doğrulama arasında ortak grup, dosya, çekim saniyesi ya da seri varsa başarısız olur.
 
+## Uygulamayı çalıştırma
+
+`uygulama/` altında basit, Türkçe bir yerel web arayüzü var (Streamlit): çiftçi bir yaprak fotoğrafı yükler; uygulama yaprağı zeminden ayırır, hastalığı (sınıf + olasılıklar) ve şiddet düzeyini (sağlıklı / az hastalıklı / çok hastalıklı, lezyon oranı %) gösterir, lezyon bölgelerini işaretler ve genel önerilerde bulunur. En yüksek olasılık %60'ın altındaysa "emin değilim, daha net fotoğraf çekin" der. Bu bir karar destek aracıdır; ilaç dozu vermez, kesin teşhis için ziraat mühendisine yönlendirir.
+
+```powershell
+.\.venv\Scripts\python -m pip install streamlit      # ya da: pip install -r requirements.txt
+.\.venv\Scripts\python -m streamlit run uygulama\app.py
+# ya da: powershell -ExecutionPolicy Bypass -File uygulama_baslat.ps1
+```
+
+Model `src/tahmin.py` içinde `tahmin_et` varsa onu, yoksa `ciktilar/model_en_iyi.pt` dosyasını kullanır (`uygulama/model_adaptoru.py`; kullanılan model sayfada küçük yazıyla görünür). Model dosyası eğitimle üretilir ve depoda yoktur.
+
 ## Veri kaynakları ve lisanslar
 
 - **A.** Rashid M. R. A., Hasan M., Gani R., Kamara R., Tarin T. K., Rabbi S. F. *Image Dataset for Bean and Cowpea Plant Leaf Disease Detection and Freshness Assessment from Bangladesh.* Mendeley Data v1 (2024), doi:[10.17632/ykvcrjffzd.1](https://doi.org/10.17632/ykvcrjffzd.1); makale: *Data in Brief* (2024), doi:[10.1016/j.dib.2024.111023](https://doi.org/10.1016/j.dib.2024.111023). CC BY 4.0.
 - **B.** Mojumdar M. U., Dip S. D., Alahi T. E., Tonmoy S. *Bean Health and Disease Dataset: A Resource for Agricultural Research.* Mendeley Data v3 (2025), doi:[10.17632/3km9d246z2.3](https://doi.org/10.17632/3km9d246z2.3). CC BY 4.0.
 - **C.** Barbedo J. G. A. ve ark. *Embrapa PDDB: Base de Imagens de Sintomas de Doenças de Plantas.* doi:[10.48432/XA1OVL](https://doi.org/10.48432/XA1OVL); makale: *IEEE Latin America Transactions* 16(6), 2018, doi:[10.1109/TLA.2018.8444395](https://doi.org/10.1109/TLA.2018.8444395). CC BY-NC 4.0.
+- **E (ek, yalnız genelleme denemesi).** Bugwood / IPM Images, konu 11171 "Common bacterial blight of beans" (https://www.ipmimages.org/). CC BY 3.0 US / CC BY-NC 3.0 US; atıf: "Fotoğrafçı, Kurum, Bugwood.org" (görüntü başına atıf `data/bugwood_metadata.csv`). 77 görüntüden 15'i (20 kırpım) kullanıldı; görüntüler depoda yok, `scripts/indir_bugwood.py` ile indirilir.
+
+**Not (2026-11-15):** İkinci bir CBB kaynağı (E) eklenerek ön eğitimli genel model yeniden eğitildi. Aynı kaynaklarda doğrulama yine %100, ama hiç görülmemiş Embrapa CBB yapraklarında doğru tür 0/25 (3 tohum; 22–24/25'ine yine "hastalıklı" deniyor). CBB/hale ayrımı kaynak dışında güvenilir değil. Ayrıntı: [docs/RESULTS.tr.md](docs/RESULTS.tr.md) §12–13.
 
 `ciktilar/sekiller/` altındaki şekiller bu veri setlerinden türetilmiş görüntüler (maskelenmiş, kırpılmış yaprak fotoğrafları) içerir; aynı lisans koşullarıyla, atıfla ve yalnızca ticari olmayan amaçla paylaşılır. `data/` altındaki CSV'ler yalnızca üst veri içerir, görüntü içermez. Kod [MIT lisansıdır](LICENSE); lisans veri setlerine ve onlardan türetilmiş görüntülere uzanmaz.
 

@@ -1,0 +1,83 @@
+numara,parca,karar,neden,kirpma,seri
+0454012,a,al,koyu zeminde koparilmis yaprak; sararma + damar boyunca kahverengilesme,"340,80,950,1024",s8_0454012
+0454012,b,al,koyu zeminde koparilmis yaprak; cok sayida nekrotik leke,"980,180,1490,980",s8_0454012
+5357503,a,al,iki yaprakcik yakin cekim; sol yaprakcikta sari kenarli nekrotik leke,"0,0,690,948",s1_5357503
+5357503,b,al,sag yaprakcikta nekrotik leke,"610,0,1454,948",s1_5357503
+5357504,,al,tek yaprakcik yakin cekim; kahverengi nekrotik leke,,s1_5357503
+5361436,,al,yaprak alt yuzu; su emmis/koyu lezyonlar (aciklama: water soaking),,s2_53614xx
+5361437,,al,tek yaprak; sari haleli kahverengi lekeler (erken belirti),"307,310,1305,1033",s2_53614xx
+5361438,,al,tarla karesi; ortadaki belirgin yaprak kirpildi (sari kenarli kenar nekrozu),"570,260,920,640",s2_53614xx
+5361439,a,al,iki yaprak yakin cekim; sol yaprakta sari kenarli kenar nekrozu,"0,0,740,1030",s2_53614xx
+5361439,b,al,sag yaprak alt yuzu; nekrotik leke,"690,0,1535,1030",s2_53614xx
+5363005,,al,tek yaprak; sari haleli nekrotik lekeler,"77,0,1305,1030",s3_53630xx
+5363006,a,al,tarla; ortadaki yaprak kirpildi (kenar nekrozu),"584,305,1198,1018",s3_53630xx
+5363006,b,al,ust yaprakciklar; nekrotik kenar,"691,0,1229,356",s3_53630xx
+5363007,,al,tarla; ortadaki yaprak kirpildi (sari kenarli nekroz),"461,51,1152,965",s3_53630xx
+5363580,,al,tek yaprak; ders kitabi CBB lezyonlari (sari kenarli nekroz),"77,0,1306,1028",s4_5363580
+5363930,,al,yaprak alt yuzu yakin cekim; su emmis lezyon (erken belirti),,s5_53639xx
+5363931,a,al,sol yaprak; nekrotik lekeler,"307,312,922,987",s5_53639xx
+5363931,b,al,sag yaprak; nekrotik lekeler,"845,364,1536,935",s5_53639xx
+5365234,,al,'Mayocoba' kuru fasulye yapragi; genis nekroz,"384,151,1151,859",s6_5365234
+5402949,,al,"yakin kanopi; ortadaki nekrotik yaprak bolgesi kirpildi (yapraklar ust uste, maske belirsiz olabilir)","537,105,1074,629",s7_5402949
+0454013,,cikar,tarla/kanopi: cok yaprak ve bakla ust uste; belirgin tek yaprak siniri yok,,
+0454014,,cikar,bakla: yesil ve olgun baklalar,,
+0656088,,cikar,tohum: renk degisimi olan tohumlar,,
+1634010,,cikar,bakla: fasulye baklalarinda lezyon (yaprak degil),,
+5357505,,cikar,tarla genel gorunumu (kanopi),,
+5357506,,cikar,tarla genel gorunumu (kanopi),,
+5357507,,cikar,"tarla genel gorunumu (kanopi, sira arasi)",,
+5359903,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359904,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359905,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359906,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359907,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359908,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359909,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359910,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359911,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359912,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359913,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359914,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359915,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359916,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359917,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359918,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359919,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359920,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359921,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359922,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359923,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359924,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359925,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359926,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359927,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359928,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359929,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359930,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359931,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359932,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359933,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359934,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359935,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359936,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359937,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359938,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359939,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359940,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359941,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359942,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359943,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359944,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359945,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359946,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5359947,,cikar,"tarla genel gorunumu: 1999 Burlington deneme parselleri (sira/parsel karesi, tek yaprak belirtisi secilemiyor)",,
+5361117,,cikar,konak fasulye degil: cowpea (Vigna) - aciklamada belirtiliyor,,
+5361440,,cikar,tarla genel gorunumu (kanopi),,
+5363581,,cikar,tarla genel gorunumu (ufuk),,
+5363932,,cikar,tarla genel gorunumu (kanopi),,
+5363933,,cikar,bakla: elde tutulan bakla,,
+5363934,,cikar,tarla genel gorunumu,,
+5363935,,cikar,tarla genel gorunumu,,
+5363936,,cikar,tarla genel gorunumu (ufuk),,
+5365235,,cikar,karisik enfeksiyon: aciklamaya gore CBB + bakteriyel kahverengi leke (etiket gurultusu),,
+5411466,,cikar,"konak belirsiz: aciklamada konak yok; yapraklar ust uste, tek yaprak siniri belirsiz",,

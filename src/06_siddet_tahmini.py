@@ -2,7 +2,7 @@
 """
 06 - HASTALIK ŞİDDETİ TAHMİNİ (kural tabanlı, YAKLAŞIK).
 
-Veri setinde uzman şiddet etiketi YOK. Hocanın "sağlıklı / az hastalıklı / hastalıklı" yaprak
+Veri setinde uzman şiddet etiketi YOK. Hocanın "sağlıklı / az hastalıklı / çok hastalıklı" yaprak
 gösterme isteği için, yaprak maskesi içinde "yeşil olmayan" (sarı, kahverengi, kırmızımsı,
 nekrotik koyu) piksellerin oranı hesaplanır ve iki eşikle üç düzeye ayrılır.
 Bu bir UZMAN ETİKETİ DEĞİLDİR; yalnızca renk/piksel oranına dayalı yaklaşık bir ölçüdür
@@ -26,7 +26,6 @@ import json
 import sys
 from pathlib import Path
 
-import cv2
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -35,35 +34,9 @@ import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).parent))
+from siddet import (A_KIRMIZI, H_SARI, S_RENKLI, V_KOYU, DUZEYLER, lezyon_maskesi, lezyon_orani,  # noqa: E402,F401
+                    duzey, siddet_duzeyi)
 from ortak import CIKTI, ISLENMIS, SEKIL, SINIFLAR, SINIF_ADLARI_TR, TOHUM  # noqa: E402
-
-A_KIRMIZI = 4             # a* - 128 bunun üstündeyse kırmızımsı/kahverengi
-H_SARI = 27               # H < 27 (≈ 54°) sarı-turuncu-kahve tonları
-S_RENKLI = 60             # sarılık ölçütü için en az doygunluk (gri pikseller tonsuzdur)
-V_KOYU = 45               # bunun altı koyu nekroz
-DUZEYLER = ["sağlıklı", "az hastalıklı", "hastalıklı"]
-
-
-def lezyon_maskesi(rgb: np.ndarray, maske: np.ndarray):
-    """rgb: HxWx3 uint8, maske: HxW (0/255). Döndürür: (lezyon ikili maske, değerlendirilen yaprak maskesi)."""
-    yap = cv2.erode((maske > 127).astype(np.uint8), np.ones((5, 5), np.uint8))
-    rgb = cv2.medianBlur(rgb, 3)
-    hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
-    h, s, v = [hsv[..., i].astype(int) for i in range(3)]
-    a = cv2.cvtColor(rgb, cv2.COLOR_RGB2LAB)[..., 1].astype(int) - 128
-    lez = ((a > A_KIRMIZI) | ((h < H_SARI) & (s > S_RENKLI)) | (v < V_KOYU)).astype(np.uint8)
-    lez = cv2.morphologyEx(lez, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)) & yap
-    return lez, yap
-
-
-def lezyon_orani(rgb, maske) -> float:
-    lez, yap = lezyon_maskesi(rgb, maske)
-    return float(lez.sum() / max(yap.sum(), 1))
-
-
-def duzey(oran, t1, t2):
-    return DUZEYLER[0] if oran < t1 else (DUZEYLER[1] if oran < t2 else DUZEYLER[2])
-
 
 def main():
     SEKIL.mkdir(parents=True, exist_ok=True)
@@ -81,7 +54,7 @@ def main():
     #     etiketli yaprakların en az %99'u bu oranın altında; T1 kural yönteminin taban gürültüsüdür
     #     (damar, parlama, kenar gölgesi).
     # T2: hastalıklı sınıfların (CBB + hale) medyanı, %1'e yuvarlanır -> hastalıklı yaprakların
-    #     yaklaşık yarısı "hastalıklı", daha hafif yarısı "az hastalıklı" düzeyine düşer.
+    #     yaklaşık yarısı "çok hastalıklı", daha hafif yarısı "az hastalıklı" düzeyine düşer.
     saglikli = rap.loc[rap.sinif == "saglikli", "lezyon_orani"]
     hasta = rap.loc[rap.sinif != "saglikli", "lezyon_orani"]
     t1 = float(np.ceil(np.quantile(saglikli, 0.99) * 200) / 200)
@@ -139,7 +112,7 @@ def main():
             a2.imshow(ust)
             a2.set_title("lezyon pikselleri (mor)", fontsize=7)
     fig.suptitle(f"Kural tabanlı şiddet düzeyleri (yaklaşık; uzman etiketi değil)\n"
-                 f"lezyon oranı: sağlıklı < %{100 * t1:.1f} ≤ az hastalıklı < %{100 * t2:.0f} ≤ hastalıklı", fontsize=11)
+                 f"lezyon oranı: sağlıklı < %{100 * t1:.1f} ≤ az hastalıklı < %{100 * t2:.0f} ≤ çok hastalıklı", fontsize=11)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
     fig.savefig(SEKIL / "siddet_duzeyi_ornekleri.png", dpi=130)
     plt.close(fig)
