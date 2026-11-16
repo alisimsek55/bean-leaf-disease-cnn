@@ -8,7 +8,8 @@
     sonuc["olasiliklar"]    -> {"adi_yaprak_yanikligi": 0.91, "hale_yanikligi": 0.05, "saglikli": 0.04}
     sonuc["on_isleme"]      -> {"zemin": "beyaz|siyah|kart|genel", "basarili": bool, "alan_orani": float}
 
-Ham fotoğraf alınır ve eğitimdeki ön işleme uygulanır: zemin türü otomatik kestirilir, yaprak maskelenir,
+Ham fotoğraf alınır ve eğitimdeki ön işleme uygulanır (`genel_maske.ham_on_isle` ile aynı: EXIF yönü,
+uzun kenar 500 px, sonra `on_isle`): zemin türü otomatik kestirilir, yaprak maskelenir,
 zemin siyaha boyanır, yaprağa kırpılıp 256x256 yapılır (`genel_maske.on_isle`). Maskeleme başarısız olursa
 görüntünün tamamıyla yine tahmin yapılır (`on_isleme.basarili = False`; sonuç daha az güvenilirdir).
 Zaten ön işlenmiş (zemini siyah, 256x256) bir görüntü için `on_islenmis=True` verilebilir.
@@ -17,7 +18,8 @@ Model: `ciktilar/genel_model/model.pt` (ya da GENEL_MODEL_YOLU ortam değişkeni
 İlk çağrıda güvenli kipte (`torch.load(weights_only=True)`) yüklenir, anahtarları ve sınıf sırası
 doğrulanır, (yol, değişiklik zamanı) anahtarıyla önbellekte tutulur. CPU'da da çalışır.
 
-Uyarı: Model 5 açık veri kaynağıyla (A, B, D=PlantWild, E=Bugwood, F=Selçuk) eğitildi; başka koşullarda (tarla fotoğrafı, farklı tür) güvenilirliği
+Uyarı: Model 5 kamuya açık indirilebilir veri kaynağıyla (A, B, D=PlantWild, E=Bugwood, F=Selçuk; F'nin lisansı
+belirtilmemiş) eğitildi; başka koşullarda (tarla fotoğrafı, farklı tür) güvenilirliği
 sınırlıdır — bkz. docs/RESULTS.tr.md §12–§14.
 Komut satırı: python src/tahmin.py <goruntu_yolu> [...]
 """
@@ -112,16 +114,8 @@ def _model_yukle(model_yolu=None):
 
 
 def _rgb_oku(girdi) -> np.ndarray:
-    if isinstance(girdi, np.ndarray):
-        a = girdi
-        if a.ndim == 2:
-            a = np.repeat(a[..., None], 3, axis=2)
-        return np.ascontiguousarray(a[..., :3]).astype(np.uint8)
-    im = girdi if isinstance(girdi, Image.Image) else Image.open(girdi)
-    if im.mode in ("RGBA", "LA", "P"):  # şeffaf alan beyaz zemine (eğitimdeki kural)
-        im = im.convert("RGBA")
-        im = Image.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, 255)), im)
-    return np.asarray(im.convert("RGB"))
+    """Ortak okuma (`genel_maske.goruntu_oku`): EXIF yönü uygulanır, saydamlık beyaza boyanır."""
+    return genel_maske.goruntu_oku(girdi)
 
 
 def tahmin_et(goruntu: Union[str, Path, Image.Image, np.ndarray], model_yolu=None, zemin: str = "otomatik",
@@ -140,7 +134,7 @@ def tahmin_et(goruntu: Union[str, Path, Image.Image, np.ndarray], model_yolu=Non
         m = (g.max(axis=2) > 0).astype(np.uint8) * 255
         bilgi = {"zemin": "on_islenmis", "basarili": True, "alan_orani": float((m > 0).mean())}
     else:
-        g, m, bilgi = genel_maske.on_isle(rgb, zemin)
+        g, m, bilgi = genel_maske.on_isle(genel_maske.ilk_kucult(rgb), zemin)  # = ham_on_isle (eğitimdeki hat)
     return islenmisten_tahmin(g, m, bilgi, model_yolu)
 
 

@@ -341,3 +341,34 @@ def test_model_anahtari_mtime_degisince_degisir(tmp_path, monkeypatch):
     st = g.stat()
     os.utime(g, ns=(st.st_atime_ns, st.st_mtime_ns + 10_000_000_000))
     assert ad_alani["_model_anahtari"]() != a1
+
+
+class _Durdur(Exception):
+    pass
+
+
+@pytest.mark.parametrize("yon", [6, 8])
+def test_pil_ve_dosya_ayni_on_isle_girdisi(yon, tmp_path, monkeypatch):
+    """EXIF yönlü JPEG: PIL ve dosya yolu `on_isle`'ye aynı (yönü düzeltilmiş) görüntüyü vermeli. Model gerekmez."""
+    from PIL import Image
+    rng = np.random.default_rng(0)
+    a = rng.integers(0, 255, (120, 200, 3), dtype=np.uint8)
+    im = Image.fromarray(a)
+    ex = Image.Exif()
+    ex[0x0112] = yon
+    yol = tmp_path / "exif.jpg"
+    im.save(yol, exif=ex)
+    yakalanan = []
+
+    def sahte(rgb):
+        yakalanan.append(np.array(rgb))
+        raise _Durdur
+
+    monkeypatch.setattr(ma, "on_isle", sahte)
+    with pytest.raises(_Durdur):
+        ma.analiz_et(yol)
+    with pytest.raises(_Durdur):
+        ma.analiz_et(Image.open(yol))
+    assert yakalanan[0].shape == (200, 120, 3)  # yön uygulandı (genişlik/yükseklik yer değiştirdi)
+    assert yakalanan[0].shape == yakalanan[1].shape
+    assert np.array_equal(yakalanan[0], yakalanan[1])

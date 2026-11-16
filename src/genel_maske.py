@@ -76,6 +76,7 @@ def maske_genel(rgb: np.ndarray) -> np.ndarray:
 
 def maske_hesapla(rgb: np.ndarray, zemin: str = "otomatik"):
     """(maske 0/1, kullanılan_zemin) döndürür. zemin: otomatik|beyaz|siyah|kart|genel."""
+    cv2.setRNGSeed(0)  # GrabCut'ın k-means başlangıcı OpenCV RNG'sine bağlı: aynı girdi -> aynı maske (eğitim = tahmin)
     if zemin == "otomatik":
         zemin = zemin_turu(rgb)
     f = {"beyaz": _on.maske_beyaz_zemin, "siyah": _on.maske_siyah_zemin,
@@ -125,4 +126,47 @@ def on_isle(rgb: np.ndarray, zemin: str = "otomatik"):
     return g, gm, {"zemin": kullanilan, "basarili": False, "alan_orani": 1.0}
 
 
-__all__ = ["zemin_turu", "maske_genel", "maske_hesapla", "on_isle", "KAYDET_BOYUT"]
+# ----------------------------------------------------------------------------- ham fotoğraf okuma (ortak hat)
+# Ham fotoğraf -> model girdisi yolunun ilk adımı. Eğitim verisi (F = Selçuk, src/12_selcuk_veri.py), `tahmin.tahmin_et`
+# ve uygulama (uygulama/model_adaptoru.py) AYNI fonksiyonları kullanır: EXIF yönü uygulanır, saydam alan beyaza
+# boyanır, uzun kenar ILK_UZUN_KENAR'a küçültülür, sonra `on_isle`.
+# Neden 500 px: F'de CBB'lerin tamamı 500 px genişliğinde, sağlıklıların bir kısmı 4608 px; hepsini 500'e indirmek
+# çözünürlüğün sınıf ipucu olmasını önler. Tarla fotoğrafı (uygulamanın asıl girdisi) eğitimde yalnız bu çözünürlükte
+# görüldüğü için tahminde de aynısı kullanılır. Yaprağın kadrajı doldurduğu fotoğraflarda (A/B tipi) 500 px'ten
+# kırpılan yaprak yine >= 256 px kalır; çıktı her durumda 256x256'dır (bkz. RESULTS §14.2).
+ILK_UZUN_KENAR = 500
+
+
+def goruntu_oku(girdi) -> np.ndarray:
+    """Yol / PIL.Image / numpy -> RGB uint8 (H, W, 3). PIL ve dosyada EXIF yönü uygulanır; saydamlık beyaz zemine
+    (eğitimdeki kural). numpy girdide EXIF yoktur, 2 boyutlu gri ise 3 kanala çoğaltılır."""
+    from PIL import Image, ImageOps
+    if isinstance(girdi, np.ndarray):
+        a = girdi
+        if a.ndim == 2:
+            a = np.repeat(a[..., None], 3, axis=2)
+        return np.ascontiguousarray(a[..., :3]).astype(np.uint8)
+    im = girdi if isinstance(girdi, Image.Image) else Image.open(girdi)
+    im = ImageOps.exif_transpose(im)
+    if im.mode in ("RGBA", "LA", "P"):
+        im = im.convert("RGBA")
+        im = Image.alpha_composite(Image.new("RGBA", im.size, (255, 255, 255, 255)), im)
+    return np.asarray(im.convert("RGB"))
+
+
+def ilk_kucult(rgb: np.ndarray, uzun: int = ILK_UZUN_KENAR) -> np.ndarray:
+    """Uzun kenar `uzun`'dan büyükse INTER_AREA ile küçültür (büyütmez)."""
+    H, W = rgb.shape[:2]
+    s = uzun / max(H, W)
+    if s >= 1:
+        return rgb
+    return cv2.resize(rgb, (max(1, int(round(W * s))), max(1, int(round(H * s)))), interpolation=cv2.INTER_AREA)
+
+
+def ham_on_isle(girdi, zemin: str = "otomatik"):
+    """Ham fotoğraf (yol/PIL/numpy) -> `on_isle` çıktısı; eğitim (F) ve tahmin için tek ortak hat."""
+    return on_isle(ilk_kucult(goruntu_oku(girdi)), zemin)
+
+
+__all__ = ["zemin_turu", "maske_genel", "maske_hesapla", "on_isle", "KAYDET_BOYUT", "ILK_UZUN_KENAR",
+           "goruntu_oku", "ilk_kucult", "ham_on_isle"]

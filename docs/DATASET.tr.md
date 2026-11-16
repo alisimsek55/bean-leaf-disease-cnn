@@ -253,25 +253,35 @@ yalnız **fasulye (*P. vulgaris*) yaprağında görünür CBB belirtisi** olan k
 | Kaynak | **Bean Bacterial Blight Disease Dataset** — Selçuk Üniversitesi (Murat Koklu veri setleri). Türkiye'de tarlada çekilmiş fasulye (*P. vulgaris*) fotoğrafları; iki çeşit (**Akbulut**, **Üstün42**), sınıflar: *Xanthomonas axonopodis* pv. *phaseoli* (CBB) ve sağlıklı. |
 | Makale / atıf (zorunlu) | Kursun R., Gur A., Bastas K. K., Koklu M. (2024). *Agronomy* 14(7):1495. doi:10.3390/agronomy14071495 |
 | URL | https://www.muratkoklu.com/datasets/Bean_Bacterial_Blight_Disease_Dataset.zip (kullanıcı yazarla yazışıp kendisi indirdi; bu projede ağdan indirme yapılmadı) |
-| Lisans | Sayfada açık lisans yazmıyor; **atıf zorunlu**. Bu yüzden **görüntüler yeniden dağıtılmaz**: `data/raw_selcuk/` ve `data/islenmis_selcuk/` `.gitignore`'da. Depoda yalnız `src/12_selcuk_veri.py` ve `data/selcuk_metadata.csv` (dosya, orijinal ad, çeşit, sınıf, SHA-256, genişlik, yükseklik, bayt) var. |
+| Lisans | Sayfada açık lisans yazmıyor; **atıf zorunlu**. Bu yüzden **görüntüler yeniden dağıtılmaz**: `data/raw_selcuk/` ve `data/islenmis_selcuk/` `.gitignore`'da. Depoda yalnız `src/12_selcuk_veri.py`, `data/selcuk_metadata.csv` (dosya, orijinal ad, çeşit, sınıf, SHA-256, genişlik, yükseklik, bayt, EXIF yönü, çekim zamanı) ve `data/selcuk_seri_baglari.csv` (gözle doğrulanmış seri bağları) var. |
 | Ham içerik | 4 klasör × 1000 JPEG = 4000. Boyutlar: CBB'lerin tamamı 500×243; sağlıklılarda 500×281 (1069), 500×243 (834), 4608×2128 (97). Boyut dağılımı sınıfa göre farklı olduğu için tüm görüntüler ön işlemeden önce uzun kenarı 500 px'e indirildi (çözünürlük kısayolu olmasın). |
 
 **Kopya / artırma denetimi** (`src/12_selcuk_veri.py`; sonuç `data/islenmis_selcuk/selcuk_ozeti.json`):
-- **Birebir kopya (SHA-256): 351.** `Ustun42_Healthy (1)`–`(351)` dosyaları `Akbulut_Healthy (1)`–`(351)` ile bayt bayt aynı.
-  Bunlara ek olarak `Ustun42_Healthy (30)`, `Akbulut_Healthy (30)`'un döndürülmüş kopyası (8 yönlü dHash uzaklığı 0).
+- **Birebir kopya (SHA-256): 351.** `Ustun42_Healthy (1)`–`(29)` ve `(31)`–`(352)` dosyaları, aynı numaralı
+  `Akbulut_Healthy` dosyalarıyla bayt bayt aynı. `Ustun42_Healthy (30)` ise `Akbulut_Healthy (30)`'un döndürülmüş kopyası
+  (SHA farklı, 8 yönlü dHash uzaklığı 0). SHA kopya gruplarında önce sınıf çelişkisi denetlenir (farklı sınıf → grubun
+  tamamı atılır); F'de çelişkili grup yok.
   Toplam 352 kopya atıldı (ilk görülen = Akbulut tutuldu). **Bu 352 görüntünün çeşit etiketi güvenilir değil**
   (hangi çeşide ait olduğu bilinemiyor); Akbulut sağlıklı olarak tutuldu.
 - **8 yönlü dHash** (4 döndürme × ayna; 256 bit; eşik ≤ 20): klasör içinde döndürülmüş/çevrilmiş/kırpılmış artırma
   kopyası **bulunmadı** (yakın çift 1: yukarıdaki çeşitler arası kopya). En yakın komşu uzaklığı ≤ 30 olan yalnız 4,
   ≤ 50 olan 8 görüntü var (ardışık numaralı, aynı sahnenin ikinci karesi). Yani F'de artırma ile şişirme yok;
   **3648 benzersiz fotoğraf** (CBB Akbulut 1000, CBB Üstün42 1000, sağlıklı Akbulut 1000, sağlıklı Üstün42 648).
-- **Seri gruplaması:** Gözle bakıldığında dosyalar çekim sırasıyla numaralı ve ardışık kareler çoğu zaman aynı
-  bitki/yaprağın biraz farklı açıdan çekimi (ör. CBB 0390/0391, sağlıklı 0766/0767). Bu, dHash'in yakalamadığı
-  bir sızıntı yolu. Kural: aynı klasörde aynı 10'luk numara bloğu = aynı seri; blok sınırında ardışık (fark ≤ 2) iki
-  kare, ImageNet EfficientNet-B0 gömmelerinin kosinüs benzerliği ≥ 0,85 ise birleştirilir (eşik, örnek çiftlere
-  gözle bakılarak seçildi). Sonuç: **274 grup** (CBB Akbulut 87, CBB Üstün42 95, sağlıklı Akbulut 56, sağlıklı Üstün42 36;
-  medyan 10, en büyük 70 görüntü). Bölme bu gruplarla yapılır. Bu gruplama ihtiyatlıdır ama kusursuz değildir:
-  farklı bloklarda aynı bitkinin tekrar çekilmiş olması dışlanamaz.
+- **Seri gruplaması (2026-11-16 çapraz kontrol sonrası düzeltildi):** Dosyalar çekim sırasıyla numaralı (EXIF
+  `DateTimeOriginal` numara sırasıyla birebir artıyor; Samsung SM-N960F, Ağustos–Eylül 2023). Kareler ~5–8 s arayla çekilmiş;
+  ardışık kareler çoğu zaman aynı bitki/yaprağın biraz farklı açıdan çekimi. Bağ kuralları (union-find):
+  1. aynı klasörde aynı 10'luk numara bloğu;
+  2. blok sınırında ardışık (fark ≤ 2) iki kare, **EXIF yönü uygulanmış** ImageNet EfficientNet-B0 gömmelerinin kosinüs
+     benzerliği ≥ 0,85 ise;
+  3. aynı klasörde çekim zamanına göre ardışık iki kare arası **≤ 10 s** ise (A'daki seri çekim kuralının aynısı;
+     gözle aynı yaprak olduğu görülen çiftler 2–12 s arasındaydı);
+  4. elle doğrulanmış manifest `data/selcuk_seri_baglari.csv` (8 çift: 10'luk blok sınırındaki 261 bağsız çift temas
+     sayfasında incelendi, aynı yaprak/sahne olduğu açık olanlar yazıldı; çapraz kontrolde bulunan 0390/0391 dahil).
+  İlk sürümde (2) EXIF yönü uygulanmadan hesaplanmıştı (3648 görüntünün 2717'sinde EXIF yönü ≠ 1) ve (3)–(4) yoktu;
+  sonuç 274 gruptu ve 0390/0391 gibi aynı-bitki çiftleri bölmenin iki tarafına düşebiliyordu. Düzeltilmiş gruplama:
+  **74 grup** (CBB Akbulut 13, CBB Üstün42 20, sağlıklı Akbulut 25, sağlıklı Üstün42 16; medyan 34, en büyük 190
+  görüntü). Gruplar büyük (çekim oturumu düzeyi) olduğu için bölme "hedefe en yakın" açgözlü grup seçimiyle yapılır.
+  Bu ihtiyatlı bir gruplamadır; yine de >10 s arayla aynı bitkiye dönülmüş olması tamamen dışlanamaz.
 - **Kaynaklar arası:** F'nin 8 yönünden herhangi biri ile A (1057), B (1376), C (27), D (371), E (20) görüntüleri
   arasında dHash ≤ 20 olan çift **0** (en küçük uzaklıklar: A 77, B 67, C 82, D 77, E 81). C (Embrapa) görüntüleri
   bu denetimde **yalnız dHash için** okundu (etiket/model çıktısı yok) — §9 ve RESULTS §12.2'deki istisnayla aynı.
@@ -279,11 +289,18 @@ yalnız **fasulye (*P. vulgaris*) yaprağında görünür CBB belirtisi** olan k
   olduğu fark edildi, yani E'nin A/B/C/D'ye karşı denetimi geçersizdi. Düzeltildi ve yeniden ölçüldü: E'nin A/B/C/D'ye
   en küçük uzaklığı 78/79/85/88 — sonuç (yakın kopya 0) değişmedi.)
 
-**Ön işleme ve gözle kontrol:** `genel_maske.on_isle(otomatik)` (uygulamadaki `tahmin_et` ile aynı yol).
+**Ön işleme ve gözle kontrol:** ortak ham görüntü hattı `genel_maske.ham_on_isle`: EXIF yönü uygulanır, saydamlık
+beyaza boyanır, uzun kenar **500 px**'e küçültülür, sonra `on_isle(otomatik)`. `tahmin.tahmin_et` ve uygulama
+(`uygulama/model_adaptoru.py`) aynı fonksiyonları kullanır; GrabCut'ın rastgele başlangıcı sabit tohumlandı (aynı
+girdi → aynı maske). Aynı ham JPEG'in iki yolda aynı 256×256 çıktıyı verdiği testle denetleniyor
+(`tests/test_selcuk_veri.py`). 500 px seçiminin gerekçesi: F'de CBB'lerin tamamı 500 px, sağlıklıların bir kısmı 4608 px;
+hepsini 500'e indirmek çözünürlüğün sınıf ipucu olmasını önler, tarla fotoğrafları eğitimde yalnız bu çözünürlükte görüldü.
+A/B tipi (yaprak kadrajı dolduruyor) ham fotoğraflarda bu hatla 60/60 doğru tahmin alındı (A/B doğrulamasından, sınıf ×
+kaynak başına 15).
 3648/3648 maskelendi (3644 "genel", 4 "siyah" zemin; maske alanı medyanı %36). Kontrol sayfası
 `ciktilar/genel_model/selcuk_maske_kontrol.jpg` (48 rastgele örnek): çoğunda merkezdeki yaprak ya da birbirine değen
-birkaç yaprak alınıyor, toprak ve gökyüzü atılıyor. Hatalar: bazılarında toprak parçası maskede kalıyor (ör. Üstün42 CBB
-0016, sağlıklı 0711), bazılarında lezyonlu yaprak yerine yandaki sağlıklı yaprak ya da yaprak kümesi alınıyor.
+birkaç yaprak alınıyor, toprak ve gökyüzü atılıyor. Hatalar: bazılarında toprak parçası maskede kalıyor, bazılarında
+lezyonlu yaprak yerine yandaki sağlıklı yaprak ya da yaprak kümesi alınıyor.
 Alternatifler (merkez kare kırpma + maskesiz) diğer kaynaklarla (zemin siyah) tutarsız olur ve uygulamada `tahmin_et`
 yolu değiştirilmeden kullanılamazdı; bu yüzden seçilmedi. Örnek şekil: `ciktilar/sekiller/rapor/sekil_selcuk_ornekleri.png`.
 

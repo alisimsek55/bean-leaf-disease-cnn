@@ -119,7 +119,8 @@ def main():
     bak = KL / "c_bakis_kaydi.jsonl"
     # "basladi" satırları okuma denemesi kaydıdır; bakış sayısı tamamlanan (ya da eski biçimli) kayıtlardır
     ozet["C_bakis_sayisi"] = (sum(1 for sat in open(bak, encoding="utf-8")
-                                  if sat.strip() and json.loads(sat).get("durum") != "basladi") if bak.exists() else 0)
+                                  if sat.strip() and json.loads(sat).get("durum") in (None, "tamamlandi"))
+                            if bak.exists() else 0)  # "basladi" = okuma denemesi, "not" = açıklama satırı
     (KL / "ozet.json").write_text(json.dumps(ozet, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(ozet["vekil"], indent=1), json.dumps(ozet["son_grup"], indent=1))
 
@@ -156,7 +157,8 @@ def main():
 
     kisa = {"SON_K1_b0_temel": "B0 temel", "SON_K3_b0_guclu_web": "B0 güçlü+web\n(önceki seçilen)",
             "SON_CNN_guclu_web": "Özel CNN\ngüçlü+web", "SON_E1_b0_guclu_web_E": "B0 güçlü+web+E\n(yeni)",
-            "SON_E2_b0_guclu_web_E_hucre": "B0+web+E\n+hücre (§13)", "SON_G1_b0_E2_F": "E2 + F\n(Selçuk)",
+            "SON_E2_b0_guclu_web_E_hucre": "B0+web+E\n+hücre (§13)", "SON_G1S_b0_E2_F": "E2 + F (sızın-\ntılı gruplar)",
+            "SON_G1_b0_E2_F": "E2 + F\n(düzeltilmiş)",
             "SON_G2_b2_E2_F": "B2: E2 + F\n(Selçuk)"}
     etiket, dag = ["Sıfırdan CNN\n(önceki §6.2c)"], [[2, 13, 10]]
     for k in sorted(ozet["son"], key=lambda x: ("_G" in x, "_E" in x, x.rsplit("_tam_", 1)[0] != "SON_K1_b0_temel", x)):

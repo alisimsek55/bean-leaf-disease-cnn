@@ -1,0 +1,12 @@
+# Gözle doğrulanmış ek seri bağları (aynı bitki/yaprak; 10'luk blok sınırında). Denetim 2026-11-16: blok sınırındaki
+# 261 bağsız ardışık çift temas sayfasında incelendi; aynı yaprak/sahne olduğu açık görülenler aşağıda. Diğerleri EXIF çekim
+# zamanı kuralıyla (ardışık kare <= 10 s) bağlanır; bkz. src/12_selcuk_veri.py ve DATASET §10.
+dosya1,dosya2,not
+akbulut_cbb_0390.jpg,akbulut_cbb_0391.jpg,aynı bitki (çapraz kontrolde bulundu; 7 s)
+akbulut_cbb_0130.jpg,akbulut_cbb_0131.jpg,aynı lezyonlu yaprak (10 s)
+akbulut_cbb_0190.jpg,akbulut_cbb_0191.jpg,aynı sahne (2 s)
+akbulut_cbb_0210.jpg,akbulut_cbb_0211.jpg,aynı yaprak elle tutulmuş (10 s)
+akbulut_cbb_0230.jpg,akbulut_cbb_0231.jpg,aynı yaprak farklı açı (12 s)
+akbulut_cbb_0300.jpg,akbulut_cbb_0301.jpg,aynı kuruyan yaprak (2 s)
+akbulut_cbb_0530.jpg,akbulut_cbb_0531.jpg,aynı nekrotik yaprak elle tutulmuş (3 s)
+akbulut_cbb_0630.jpg,akbulut_cbb_0631.jpg,aynı sahne (5 s)

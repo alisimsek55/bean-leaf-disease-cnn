@@ -124,3 +124,17 @@ def test_c_bakis_kaydi_iki_kayit(tmp_path):
     satirlar = [json.loads(s) for s in yol.read_text(encoding="utf-8").splitlines()]
     assert [s["durum"] for s in satirlar] == ["basladi", "tamamlandi"]
     assert all("zaman" in s for s in satirlar)
+
+
+def test_c_bakis_kaydi_eszamanli_yazim_kayipsiz(tmp_path):
+    """Paralel yazımda satır kaybolmamalı (kilitli tek parça yazım)."""
+    pytest.importorskip("torch")
+    import json
+    from concurrent.futures import ThreadPoolExecutor
+    gm = yukle("09_genelleme")
+    yol = tmp_path / "c_bakis_kaydi.jsonl"
+    with ThreadPoolExecutor(8) as ex:
+        list(ex.map(lambda i: gm.c_kaydi_yaz({"durum": "basladi", "deney": f"d{i}"}, yol), range(40)))
+    satirlar = [s for s in yol.read_text(encoding="utf-8").split("\n") if s]
+    assert sorted(json.loads(s)["deney"] for s in satirlar) == sorted(f"d{i}" for i in range(40))
+    assert not (tmp_path / "c_bakis_kaydi.jsonl.kilit").exists()

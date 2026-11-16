@@ -57,9 +57,11 @@ CIKIS = VERI / "islenmis_selcuk"
 METADATA = VERI / "selcuk_metadata.csv"
 KAYNAK = "selcuk_bbb"
 ESIK = 20  # 256 bit üzerinden Hamming (08/11 ile aynı)
-UZUN_KENAR = 500
+UZUN_KENAR = 500   # = genel_maske.ILK_UZUN_KENAR (ortak hat; main'de denetlenir)
+SERI_MANIFEST = VERI / "selcuk_seri_baglari.csv"  # gözle doğrulanmış ek seri bağları (dosya1, dosya2, not)
 SERI_BLOK = 10     # aynı klasörde ardışık 10 numara = bir seri (çekim sırası; A'nın 10 karelik serileri gibi)
 SERI_ESIK = 0.85   # blok sınırında ardışık iki karenin ImageNet gömmesi kosinüs benzerliği eşiği
+ZAMAN_PENCERE_SN = 10  # aynı klasörde çekim zamanına göre ardışık iki kare arası <= 10 s ise aynı seri (EXIF)
 ATIF = ("Kursun R., Gur A., Bastas K. K., Koklu M. (2024). Agronomy 14(7):1495, doi:10.3390/agronomy14071495 "
         "(Selçuk Üniversitesi, Bean Bacterial Blight Disease Dataset)")
 KLASORLER = {
@@ -88,6 +90,17 @@ def hedef_ad(cesit: str, sinif: str, no: int) -> str:
     return f"{cesit}_{SINIF_KISA[sinif]}_{no:04d}.jpg"
 
 
+def cekim_zamani(im: Image.Image):
+    """EXIF DateTimeOriginal (yoksa DateTime) -> 'YYYY-MM-DD HH:MM:SS' ya da None."""
+    from datetime import datetime
+    e = im.getexif()
+    z = e.get_ifd(0x8769).get(36867) or e.get(306)
+    try:
+        return datetime.strptime(str(z).strip(), "%Y:%m:%d %H:%M:%S").strftime("%Y-%m-%d %H:%M:%S") if z else None
+    except ValueError:
+        return None
+
+
 def sha256_dosya(yol) -> str:
     h = hashlib.sha256()
     with open(yol, "rb") as f:
@@ -114,9 +127,10 @@ def metadata_olustur(kaynak: Path, hedef: Path = HAM_F, kopyala: bool = True) ->
                     shutil.copyfile(f, h)
             with Image.open(f) as im:
                 w, hh = im.size
+                yon, zaman = im.getexif().get(274, 1), cekim_zamani(im)
             kayit.append({"dosya": f"{hedef.name}/{ad}", "orijinal": f"{klasor}/{f.name}", "cesit": cesit,
                           "sinif": sinif, "sha256": sha, "genislik": w, "yukseklik": hh,
-                          "bayt": f.stat().st_size})
+                          "bayt": f.stat().st_size, "exif_yon": int(yon), "cekim_zamani": zaman})
     return pd.DataFrame(kayit)
 
 
@@ -185,24 +199,87 @@ def seri_baglantilari(klasor, no, benzerlik, blok: int = SERI_BLOK, esik: float 
     return ciftler
 
 
-def gomme_hesapla(yollar, bs: int = 64) -> np.ndarray:
-    """ImageNet ön eğitimli EfficientNet-B0 (yerel önbellekteki ağırlıklar) ile L2-normalize gömme [N,1280].
-    Yalnız F içi seri gruplaması için (benzer ardışık kareleri bağlamak); modelle/C ile ilgisi yok."""
+def zaman_baglantilari(klasor, zaman, pencere: float = ZAMAN_PENCERE_SN):
+    """Aynı klasörde çekim zamanına göre sıralı ardışık iki kare arası <= pencere saniye ise bağ [(i, j)].
+    (A'daki seri çekim kuralının aynısı; F'de kareler ~5-8 s arayla çekilmiş, aynı yaprağın tekrar çekimi
+    gözle 2-12 s arasında görüldü.) Zamanı olmayan kare bağlanmaz."""
+    katman = {}
+    for i, (k, z) in enumerate(zip(klasor, zaman)):
+        if isinstance(z, str) and z:
+            katman.setdefault(k, []).append((pd.Timestamp(z), i))
+    out = []
+    for ogeler in katman.values():
+        ogeler.sort()
+        for (t0, a), (t1, b) in zip(ogeler, ogeler[1:]):
+            if (t1 - t0).total_seconds() <= pencere:
+                out.append((a, b))
+    return out
+
+
+def gomme_agirlik_yolu(yol=None) -> Path:
+    """Seri gruplaması için ImageNet EfficientNet-B0 ağırlık dosyası. Ağdan İNDİRİLMEZ: verilen yol ya da torch hub
+    önbelleği (`<hub>/checkpoints/efficientnet_b0_rwightman-*.pth`) olmalı; yoksa anlaşılır hata (yan etkiden önce)."""
+    if yol:
+        y = Path(yol)
+        if not y.is_file():
+            raise FileNotFoundError(f"Gömme ağırlık dosyası yok: {y}")
+        return y
+    import torch
+    import torchvision.models as tm
+    ad = Path(tm.EfficientNet_B0_Weights.DEFAULT.url).name
+    y = Path(torch.hub.get_dir()) / "checkpoints" / ad
+    if not y.is_file():
+        raise FileNotFoundError(
+            f"EfficientNet-B0 ImageNet ağırlıkları yerel önbellekte yok ({y}). Bu betik ağdan indirmez: dosyayı "
+            f"{tm.EfficientNet_B0_Weights.DEFAULT.url} adresinden elle indirip bu yola koyun ya da --gomme_agirlik verin.")
+    return y
+
+
+def gomme_girdisi(yol, kisa: int = 224) -> np.ndarray:
+    """EXIF yönü uygulanmış görüntü, en-boy yönü korunarak (yatay 2:1 / dikey 1:2) kisa x 2*kisa'ya getirilir."""
+    im = ImageOps.exif_transpose(Image.open(yol)).convert("RGB")
+    w, h = im.size
+    return np.array(im.resize((2 * kisa, kisa) if w >= h else (kisa, 2 * kisa)))
+
+
+def gomme_hesapla(yollar, agirlik=None, bs: int = 32) -> np.ndarray:
+    """ImageNet ön eğitimli EfficientNet-B0 (yalnız yerel ağırlık) ile L2-normalize gömme [N,1280].
+    Yalnız F içi seri gruplaması için (benzer ardışık kareleri bağlamak); modelle/C ile ilgisi yok.
+    Girdi EXIF yönü uygulanmış görüntüdür (dHash ve ön işleme ile aynı)."""
     import torch
     import torchvision.models as tm
     cihaz = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    ag = tm.efficientnet_b0(weights="DEFAULT").eval().to(cihaz)
+    ag = tm.efficientnet_b0(weights=None)
+    ag.load_state_dict(torch.load(gomme_agirlik_yolu(agirlik), map_location="cpu", weights_only=True))
+    ag = ag.eval().to(cihaz)
     f = torch.nn.Sequential(ag.features, ag.avgpool, torch.nn.Flatten())
     ort = torch.tensor([0.485, 0.456, 0.406], device=cihaz).view(1, 3, 1, 1)
     std = torch.tensor([0.229, 0.224, 0.225], device=cihaz).view(1, 3, 1, 1)
     E = []
     with torch.no_grad():
-        for s in range(0, len(yollar), bs):
-            x = [torch.from_numpy(np.array(Image.open(y).convert("RGB").resize((448, 224)))).permute(2, 0, 1)
-                 for y in yollar[s:s + bs]]
-            x = (torch.stack(x).to(cihaz).float() / 255 - ort) / std
+        for y in yollar:  # yönler farklı olabildiği için tek tek (3648 görüntü, GPU'da ~1 dk)
+            x = torch.from_numpy(gomme_girdisi(y)).permute(2, 0, 1)[None]
+            x = (x.to(cihaz).float() / 255 - ort) / std
             E.append(torch.nn.functional.normalize(f(x), dim=1).cpu())
     return torch.cat(E).numpy()
+
+
+def elle_seri_baglari(dosyalar, yol=SERI_MANIFEST):
+    """Manifestteki (dosya1, dosya2) çiftlerini indeks çiftlerine çevirir. Atılmış (kopya) dosyalar atlanır;
+    metadata'da hiç olmayan bir ad yazım hatasıdır -> ValueError."""
+    if not Path(yol).exists():
+        return []
+    m = pd.read_csv(yol, comment="#")
+    ix = {d: i for i, d in enumerate(dosyalar)}
+    out = []
+    for r in m.itertuples():
+        a, b = f"raw_selcuk/{r.dosya1}", f"raw_selcuk/{r.dosya2}"
+        for d in (a, b):
+            if not (HAM_F / Path(d).name).exists() and d not in ix:
+                raise ValueError(f"seri manifestinde bilinmeyen dosya: {d}")
+        if a in ix and b in ix:
+            out.append((ix[a], ix[b]))
+    return out
 
 
 # ----------------------------------------------------------------------------- bölme
@@ -217,12 +294,12 @@ def gruplu_bol(df: pd.DataFrame, oran: float = 0.3, tohum: int = TOHUM, katman=(
     for _, g in df.groupby(list(katman), sort=True):
         gr = sorted(set(g.grup))
         rng.shuffle(gr)
+        boy = g.grup.value_counts()
         hedef, n = oran * len(g), 0
-        for x in gr:
-            if n >= hedef:
-                break
-            dog.append(x)
-            n += int((g.grup == x).sum())
+        for x in gr:  # karışık sırada; grup eklemek hedefe yaklaştırıyorsa eklenir (büyük gruplar aşmasın)
+            if abs(n + boy[x] - hedef) < abs(n - hedef):
+                dog.append(x)
+                n += int(boy[x])
     m = df.grup.isin(dog)
     return df[~m].reset_index(drop=True), df[m].reset_index(drop=True)
 
@@ -260,15 +337,6 @@ def dis_hashler():
 
 
 # ----------------------------------------------------------------------------- 5. ön işleme
-def kucult(rgb: np.ndarray, uzun: int = UZUN_KENAR) -> np.ndarray:
-    import cv2
-    H, W = rgb.shape[:2]
-    s = uzun / max(H, W)
-    if s >= 1:
-        return rgb
-    return cv2.resize(rgb, (int(round(W * s)), int(round(H * s))), interpolation=cv2.INTER_AREA)
-
-
 def kontrol_sayfasi(ciftler, yol, T=200, sut=6):
     """(ad, ham, işlenmiş) üçlüleri -> yan yana (ham | işlenmiş) gözle kontrol sayfası."""
     sat = (len(ciftler) + sut // 2 - 1) // (sut // 2)
@@ -286,13 +354,32 @@ def kontrol_sayfasi(ciftler, yol, T=200, sut=6):
 
 
 def _isle(yol):
-    """Paralel işçi: ham dosya -> (görüntü, maske, bilgi, küçültülmüş ham)."""
+    """Paralel işçi: ham dosya -> (görüntü, maske, bilgi, küçültülmüş ham). Ön işleme `genel_maske.ham_on_isle`:
+    `tahmin_et` ve uygulama ile AYNI hat (EXIF + uzun kenar 500 + on_isle)."""
     import cv2
     cv2.setNumThreads(1)
     genel_maske = importlib.import_module("genel_maske")
-    rgb = kucult(np.asarray(ImageOps.exif_transpose(Image.open(yol)).convert("RGB")))
-    g, m, bilgi = genel_maske.on_isle(rgb, "otomatik")
-    return g, m, bilgi, rgb
+    g, m, bilgi = genel_maske.ham_on_isle(yol, "otomatik")
+    return g, m, bilgi, genel_maske.ilk_kucult(genel_maske.goruntu_oku(yol))
+
+
+def sha_ayikla(meta: pd.DataFrame):
+    """Birebir kopyalar (aynı SHA-256): grupta birden çok sınıf varsa (etiket çelişkisi) grubun TAMAMI atılır;
+    tek sınıfsa ilki tutulur, diğerleri atılır. Döner (tutulan df, dışlanan kayıtlar)."""
+    dislanan, at = [], set()
+    for sha, g in meta.groupby("sha256", sort=False):
+        if len(g) < 2:
+            continue
+        if g.sinif.nunique() > 1:
+            for i in g.index:
+                at.add(i)
+                dislanan.append({"dosya": meta.dosya[i], "neden": "birebir_kopya_sinif_celiskili",
+                                 "esli": ";".join(d for d in g.dosya if d != meta.dosya[i]), "uzaklik": 0})
+        else:
+            for i in g.index[1:]:
+                at.add(i)
+                dislanan.append({"dosya": meta.dosya[i], "neden": "birebir_kopya", "esli": g.dosya.iloc[0], "uzaklik": 0})
+    return meta.drop(index=sorted(at)).reset_index(drop=True), dislanan
 
 
 def kopya_ayikla(df: pd.DataFrame, ciftler):
@@ -313,6 +400,9 @@ def kopya_ayikla(df: pd.DataFrame, ciftler):
 
 def main(a):
     from concurrent.futures import ProcessPoolExecutor
+    genel_maske = importlib.import_module("genel_maske")
+    assert genel_maske.ILK_UZUN_KENAR == UZUN_KENAR
+    agirlik = gomme_agirlik_yolu(a.gomme_agirlik)  # yan etkilerden ÖNCE: yerel ağırlık yoksa burada dur
     CIKIS.mkdir(parents=True, exist_ok=True)
     # 1. kopya + metadata
     meta = metadata_olustur(Path(a.kaynak))
@@ -321,14 +411,11 @@ def main(a):
                 for (s, c), g in meta.groupby(["sinif", "cesit"])}
     # 2. birebir kopya (SHA-256): ilki tutulur
     once = len(meta)
-    ilk = meta.drop_duplicates("sha256", keep="first").set_index("sha256").dosya
-    birebir = meta[meta.duplicated("sha256", keep="first")]
-    dislanan = [{"dosya": r.dosya, "neden": "birebir_kopya", "esli": ilk[r.sha256], "uzaklik": 0}
-                for r in birebir.itertuples()]
+    df, dislanan = sha_ayikla(meta)
     klasor_adi = lambda d: Path(d).stem.rsplit("_", 1)[0]  # noqa: E731
-    birebir_klasor = {k: int(v) for k, v in (birebir.dosya.map(klasor_adi) + " <- " +
-                                             birebir.sha256.map(ilk).map(klasor_adi)).value_counts().items()}
-    df = meta.drop_duplicates("sha256", keep="first").reset_index(drop=True)
+    birebir_klasor = {k: int(v) for k, v in pd.Series([f"{klasor_adi(d['dosya'])} <- {klasor_adi(d['esli'].split(';')[0])}"
+                                                        for d in dislanan]).value_counts().items()}
+    n_birebir = len(dislanan)
     df["no"] = df.dosya.map(lambda d: int(Path(d).stem.rsplit("_", 1)[1]))
     df["klasor"] = df.cesit + "_" + df.sinif
     # 3. 8 yönlü dHash
@@ -345,9 +432,13 @@ def main(a):
     en_yakin = (D.astype(np.int32) + np.eye(len(D), dtype=np.int32) * 999).min(1)
     at, bag = kopya_ayikla(df, ciftler)
     # seri (aynı çekim oturumu) bağlantıları
-    E = gomme_hesapla([VERI / d for d in df.dosya])
+    E = gomme_hesapla([VERI / d for d in df.dosya], agirlik)
+    np.save(CIKIS / "selcuk_gomme.npy", E)
     seri = seri_baglantilari(df.klasor.tolist(), df.no.tolist(), lambda i, j: float(E[i] @ E[j]))
-    gr = gruplar_kur(len(df), bag + seri)
+    zb = zaman_baglantilari(df.klasor.tolist(), df.cekim_zamani.tolist())
+    elle = elle_seri_baglari(df.dosya.tolist())
+    gr = gruplar_kur(len(df), bag + seri + zb + elle)
+    gr_eski_kural = gruplar_kur(len(df), bag + seri)
     gr_dhash = gruplar_kur(len(df), bag)
     df["grup"] = ["f" + g for g in gr]
     # 4. dış kaynaklarla çapraz yakın kopya (C yalnız dHash için okunur)
@@ -386,13 +477,15 @@ def main(a):
     pd.DataFrame(dislanan, columns=["dosya", "neden", "esli", "uzaklik"]).to_csv(CIKIS / "selcuk_dislanan.csv", index=False)
     boy = son.groupby("grup").size()
     ozet = {
-        "goruntu": once, "boyutlar": boyutlar, "birebir_kopya": int(len(birebir)), "birebir_klasor": birebir_klasor,
+        "goruntu": once, "boyutlar": boyutlar, "birebir_kopya": n_birebir, "birebir_klasor": birebir_klasor,
         "sha_benzersiz": int(len(df)), "esik_hamming_256": ESIK, "yakin_cift_8yon": len(ciftler),
         "yakin_cift_yalniz_yon_degisimiyle": int(sum(1 for i, j, _ in ciftler
                                                      if np.count_nonzero(H8[i, 0] != H8[j, 0]) > ESIK)),
         "dhash_grup_sayisi_atilanlar_dahil": int(len(set(gr_dhash))),
         "en_yakin_komsu_esik_alti_sayilari": {str(t): int((en_yakin <= t).sum()) for t in (10, 20, 30, 40, 50)},
-        "seri_blok": SERI_BLOK, "seri_esik": SERI_ESIK, "seri_baglanti": len(seri),
+        "seri_blok": SERI_BLOK, "seri_esik": SERI_ESIK, "seri_baglanti": len(seri), "zaman_baglanti": len(zb), "zaman_pencere_sn": ZAMAN_PENCERE_SN,
+        "elle_seri_baglanti": len(elle), "grup_sayisi_yalniz_blok_gomme": int(len(set(gr_eski_kural))),
+        "exif_yon_1_olmayan": int((df.exif_yon != 1).sum()), "cekim_zamani_eksik": int(df.cekim_zamani.isna().sum()),
         "grup_sayisi_dhash_seri_atilanlar_dahil": int(len(set(gr))),
         "atilan": {k: int(v) for k, v in pd.Series([d["neden"] for d in dislanan]).value_counts().items()},
         "capraz_yakin_kopya": {k: int(sum(1 for v in capraz.values() if v[0] == k)) for k in "ABCDE"},
@@ -470,6 +563,7 @@ if __name__ == "__main__":
     p.add_argument("--kaynak", help="Bean_Bacterial_Blight_Disease_Dataset klasörü (yalnız okunur)")
     p.add_argument("--panel", action="store_true")
     p.add_argument("--isci", type=int, default=10, help="ön işleme için paralel süreç sayısı")
+    p.add_argument("--gomme_agirlik", help="EfficientNet-B0 ImageNet ağırlık dosyası (yoksa torch hub önbelleği)")
     p.add_argument("--taban", help="F'yi görmemiş bir model.pt ile F'nin tamamında doğruluk (eğitim yok)")
     a = p.parse_args()
     if a.panel:

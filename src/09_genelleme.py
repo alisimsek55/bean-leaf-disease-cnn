@@ -238,10 +238,29 @@ def bugwood_yari(e, tohum=TOHUM):
 
 
 def c_kaydi_yaz(kayit, yol=None):
-    """C (Embrapa) bakış kaydına bir satır ekler (zaman otomatik). C okunmadan önce 'basladi', sonuçla 'tamamlandi'."""
-    yol = yol or KLASOR / "c_bakis_kaydi.jsonl"
-    with open(yol, "a", encoding="utf-8") as f:
-        f.write(json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), **kayit}, ensure_ascii=False) + "\n")
+    """C (Embrapa) bakış kaydına bir satır ekler (zaman otomatik). C okunmadan önce 'basladi', sonuçla 'tamamlandi'.
+    Paralel süreçler aynı dosyaya yazabildiği için satır, kilit dosyası (O_EXCL) alınarak tek parça yazılır
+    (2026-11-16: kilitsiz eşzamanlı yazımda iki 'basladi' satırı kaybolmuştu)."""
+    import os
+    yol = Path(yol or KLASOR / "c_bakis_kaydi.jsonl")
+    satir = (json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), **kayit}, ensure_ascii=False) + "\n").encode("utf-8")
+    kilit = yol.with_name(yol.name + ".kilit")
+    for _ in range(600):
+        try:
+            fd = os.open(kilit, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            time.sleep(0.05)
+    else:
+        raise TimeoutError(f"C bakış kaydı kilidi alınamadı: {kilit}")
+    try:
+        with open(yol, "ab") as f:
+            f.write(satir)
+            f.flush()
+            os.fsync(f.fileno())
+    finally:
+        os.close(fd)
+        os.remove(kilit)
 
 
 def web_bol(web, tohum=TOHUM, oran=0.3):
@@ -474,11 +493,9 @@ def calistir(a):
         sonuc["C_test"] = metrik(dc, etiketler(dc), Pc)
         pd.DataFrame(Pc, columns=SINIFLAR).assign(dosya=dc.dosya, sinif=dc.sinif).to_csv(
             kl / "C_olasiliklar.csv", index=False)
-        with open(KLASOR / "c_bakis_kaydi.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), "durum": "tamamlandi",
-                                "deney": kl.name,
-                                "C_CBB_dogru": sonuc["C_test"]["kaynak_bazinda"].get("adi_yaprak_yanikligi|C", {}).get("dogru"),
-                                "C_toplam_dogru": int((Pc.argmax(1) == etiketler(dc)).sum())}, ensure_ascii=False) + "\n")
+        c_kaydi_yaz({"durum": "tamamlandi", "deney": kl.name,
+                     "C_CBB_dogru": sonuc["C_test"]["kaynak_bazinda"].get("adi_yaprak_yanikligi|C", {}).get("dogru"),
+                     "C_toplam_dogru": int((Pc.argmax(1) == etiketler(dc)).sum())})
         yaz("C TESTİ: " + json.dumps(sonuc["C_test"]["kaynak_bazinda"], ensure_ascii=False))
     (kl / "sonuc.json").write_text(json.dumps(sonuc, ensure_ascii=False, indent=2), encoding="utf-8")
     log.close()

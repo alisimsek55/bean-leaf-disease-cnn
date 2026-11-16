@@ -123,3 +123,76 @@ def test_gruplu_bol_ayrik_katmanli():
     bozuk.loc[0, "grup"] = bozuk.loc[len(bozuk) - 1, "grup"]  # grup iki katmana yayılıyor
     with pytest.raises(ValueError):
         sv.gruplu_bol(bozuk, 0.3)
+
+
+def test_sha_kopyalari_once_sinif_celiskisi():
+    meta = pd.DataFrame({"dosya": [f"raw_selcuk/x_{i}.jpg" for i in range(6)],
+                         "sinif": ["saglikli", "saglikli", "adi_yaprak_yanikligi", "saglikli", "saglikli", "saglikli"],
+                         "sha256": ["a", "b", "b", "c", "c", "d"]})
+    df, dis = sv.sha_ayikla(meta)
+    # b: iki farklı sınıf -> ikisi de atılır; c: aynı sınıf -> ilki tutulur
+    assert list(df.dosya) == ["raw_selcuk/x_0.jpg", "raw_selcuk/x_3.jpg", "raw_selcuk/x_5.jpg"]
+    nedenler = {d["dosya"]: d["neden"] for d in dis}
+    assert nedenler == {"raw_selcuk/x_1.jpg": "birebir_kopya_sinif_celiskili",
+                        "raw_selcuk/x_2.jpg": "birebir_kopya_sinif_celiskili", "raw_selcuk/x_4.jpg": "birebir_kopya"}
+
+
+def test_zaman_baglantilari():
+    klasor = ["k", "k", "k", "k", "m"]
+    zaman = ["2023-09-17 11:29:00", "2023-09-17 11:29:07", "2023-09-17 11:29:30", None, "2023-09-17 11:29:31"]
+    assert sv.zaman_baglantilari(klasor, zaman, pencere=10) == [(0, 1)]
+    assert sorted(sv.zaman_baglantilari(klasor, zaman, pencere=30)) == [(0, 1), (1, 2)]  # başka klasör bağlanmaz
+
+
+def _exifli_jpeg(yol, yon=6, boyut=(1200, 600)):
+    im = _goruntu(77, boyut)
+    ex = Image.Exif()
+    ex[274] = yon
+    ex[306] = "2023:09:17 11:29:00"
+    im.save(yol, quality=95, exif=ex)
+    return im
+
+
+def test_gomme_girdisi_exif_yonunu_uygular(tmp_path):
+    """Regresyon: seri gömmesi EXIF yönü uygulanmış görüntüden hesaplanmalı (dHash/ön işleme ile aynı)."""
+    im = _exifli_jpeg(tmp_path / "exif.jpg")  # yön 6: görüntü 90° döndürülerek gösterilir
+    duz = ImageOps_exif(Image.open(tmp_path / "exif.jpg"))
+    duz.save(tmp_path / "duz.png")
+    a, b = sv.gomme_girdisi(tmp_path / "exif.jpg"), sv.gomme_girdisi(tmp_path / "duz.png")
+    assert a.shape == (448, 224, 3)  # dikey (EXIF sonrası 600x1200)
+    assert np.abs(a.astype(int) - b.astype(int)).mean() < 3
+    assert sv.gomme_girdisi(tmp_path / "duz.png").shape != np.array(im.resize((448, 224))).shape
+    with Image.open(tmp_path / "exif.jpg") as j:
+        assert sv.cekim_zamani(j) == "2023-09-17 11:29:00"
+
+
+def ImageOps_exif(im):
+    from PIL import ImageOps
+    return ImageOps.exif_transpose(im)
+
+
+def test_gomme_agirligi_yoksa_yan_etkiden_once_anlasilir_hata(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        sv.gomme_agirlik_yolu(tmp_path / "yok.pth")
+
+
+def test_egitim_ve_tahmin_ayni_on_isleme(tmp_path, monkeypatch):
+    """Aynı ham EXIF'li JPEG: veri hazırlama (12._isle) ve tahmin_et aynı 256x256 görüntü + maskeyi üretir."""
+    pytest.importorskip("torch")
+    cv2 = pytest.importorskip("cv2")
+    yol = tmp_path / "ham.jpg"
+    a = np.full((600, 1200, 3), (150, 120, 90), np.uint8)
+    cv2.ellipse(a, (600, 300), (300, 180), 10, 0, 360, (40, 150, 60), -1)
+    ex = Image.Exif()
+    ex[274] = 6
+    Image.fromarray(a).save(yol, quality=95, exif=ex)
+    g1, m1, b1, rgb = sv._isle(yol)
+    assert max(rgb.shape[:2]) == sv.UZUN_KENAR and rgb.shape[0] > rgb.shape[1]  # EXIF uygulandı, 500'e indi
+    tahmin = yukle("tahmin")
+    yakala = {}
+    monkeypatch.setattr(tahmin, "islenmisten_tahmin", lambda g, m, bilgi, model_yolu=None: yakala.update(g=g, m=m, b=bilgi))
+    tahmin.tahmin_et(str(yol))
+    assert np.array_equal(yakala["g"], g1) and np.array_equal(yakala["m"], m1) and yakala["b"] == b1
+    gm = yukle("genel_maske")
+    g3, m3, _ = gm.ham_on_isle(Image.open(yol))  # PIL girdisi de aynı
+    assert np.array_equal(g3, g1) and np.array_equal(m3, m1)

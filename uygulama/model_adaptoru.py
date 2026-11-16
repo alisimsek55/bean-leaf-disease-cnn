@@ -326,11 +326,13 @@ def on_isle(rgb: np.ndarray):
 def analiz_et(kaynak) -> Sonuc:
     if isinstance(kaynak, Image.Image):
         _boyut_denetle(*kaynak.size)
-        pil = kaynak.convert("RGB")
+        # dosya yoluyla aynı kural: EXIF yönü + saydamlık beyaz zemine (genel_maske.goruntu_oku)
+        pil = Image.fromarray(genel_maske.goruntu_oku(kaynak))
     else:
         pil = goruntu_ac(kaynak)
     rgb = yaprak_ayirma.kucult(np.asarray(pil))
-    yaprak, m256, bilgi = on_isle(rgb)
+    # model girdisi: tahmin_et / eğitim (F) ile aynı hat — EXIF'li RGB -> uzun kenar 500 -> on_isle (rgb yalnız ekranda)
+    yaprak, m256, bilgi = on_isle(genel_maske.ilk_kucult(np.asarray(pil)))
     basarili = bool(bilgi.get("basarili"))
     yontem = f"{bilgi.get('zemin')} zemin" if basarili else "ayırma başarısız (tüm görüntü)"
     uyari = None if basarili else AYIRMA_UYARISI
