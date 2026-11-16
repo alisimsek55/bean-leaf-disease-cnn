@@ -245,3 +245,49 @@ yalnız **fasulye (*P. vulgaris*) yaprağında görünür CBB belirtisi** olan k
 - **E küçük:** 20 örnek / 8 grup. Konular tek bir hastalık uzmanının (H. F. Schwartz) arşivinde yoğunlaşıyor (20'nin 17'si).
   Bu, CBB için ikinci bir *bağımsız* kaynak sayılabilir (A: Bangladeş, koparılmış yaprak, siyah kumaş; E: ABD/Kanada,
   çoğu tarlada yaprak üzerinde), ama istatistiksel gücü çok sınırlıdır.
+
+## 10. İkinci gerçek CBB kaynağı F: Selçuk Üniversitesi "Bean Bacterial Blight Disease Dataset" (2026-11-16)
+
+| | |
+|---|---|
+| Kaynak | **Bean Bacterial Blight Disease Dataset** — Selçuk Üniversitesi (Murat Koklu veri setleri). Türkiye'de tarlada çekilmiş fasulye (*P. vulgaris*) fotoğrafları; iki çeşit (**Akbulut**, **Üstün42**), sınıflar: *Xanthomonas axonopodis* pv. *phaseoli* (CBB) ve sağlıklı. |
+| Makale / atıf (zorunlu) | Kursun R., Gur A., Bastas K. K., Koklu M. (2024). *Agronomy* 14(7):1495. doi:10.3390/agronomy14071495 |
+| URL | https://www.muratkoklu.com/datasets/Bean_Bacterial_Blight_Disease_Dataset.zip (kullanıcı yazarla yazışıp kendisi indirdi; bu projede ağdan indirme yapılmadı) |
+| Lisans | Sayfada açık lisans yazmıyor; **atıf zorunlu**. Bu yüzden **görüntüler yeniden dağıtılmaz**: `data/raw_selcuk/` ve `data/islenmis_selcuk/` `.gitignore`'da. Depoda yalnız `src/12_selcuk_veri.py` ve `data/selcuk_metadata.csv` (dosya, orijinal ad, çeşit, sınıf, SHA-256, genişlik, yükseklik, bayt) var. |
+| Ham içerik | 4 klasör × 1000 JPEG = 4000. Boyutlar: CBB'lerin tamamı 500×243; sağlıklılarda 500×281 (1069), 500×243 (834), 4608×2128 (97). Boyut dağılımı sınıfa göre farklı olduğu için tüm görüntüler ön işlemeden önce uzun kenarı 500 px'e indirildi (çözünürlük kısayolu olmasın). |
+
+**Kopya / artırma denetimi** (`src/12_selcuk_veri.py`; sonuç `data/islenmis_selcuk/selcuk_ozeti.json`):
+- **Birebir kopya (SHA-256): 351.** `Ustun42_Healthy (1)`–`(351)` dosyaları `Akbulut_Healthy (1)`–`(351)` ile bayt bayt aynı.
+  Bunlara ek olarak `Ustun42_Healthy (30)`, `Akbulut_Healthy (30)`'un döndürülmüş kopyası (8 yönlü dHash uzaklığı 0).
+  Toplam 352 kopya atıldı (ilk görülen = Akbulut tutuldu). **Bu 352 görüntünün çeşit etiketi güvenilir değil**
+  (hangi çeşide ait olduğu bilinemiyor); Akbulut sağlıklı olarak tutuldu.
+- **8 yönlü dHash** (4 döndürme × ayna; 256 bit; eşik ≤ 20): klasör içinde döndürülmüş/çevrilmiş/kırpılmış artırma
+  kopyası **bulunmadı** (yakın çift 1: yukarıdaki çeşitler arası kopya). En yakın komşu uzaklığı ≤ 30 olan yalnız 4,
+  ≤ 50 olan 8 görüntü var (ardışık numaralı, aynı sahnenin ikinci karesi). Yani F'de artırma ile şişirme yok;
+  **3648 benzersiz fotoğraf** (CBB Akbulut 1000, CBB Üstün42 1000, sağlıklı Akbulut 1000, sağlıklı Üstün42 648).
+- **Seri gruplaması:** Gözle bakıldığında dosyalar çekim sırasıyla numaralı ve ardışık kareler çoğu zaman aynı
+  bitki/yaprağın biraz farklı açıdan çekimi (ör. CBB 0390/0391, sağlıklı 0766/0767). Bu, dHash'in yakalamadığı
+  bir sızıntı yolu. Kural: aynı klasörde aynı 10'luk numara bloğu = aynı seri; blok sınırında ardışık (fark ≤ 2) iki
+  kare, ImageNet EfficientNet-B0 gömmelerinin kosinüs benzerliği ≥ 0,85 ise birleştirilir (eşik, örnek çiftlere
+  gözle bakılarak seçildi). Sonuç: **274 grup** (CBB Akbulut 87, CBB Üstün42 95, sağlıklı Akbulut 56, sağlıklı Üstün42 36;
+  medyan 10, en büyük 70 görüntü). Bölme bu gruplarla yapılır. Bu gruplama ihtiyatlıdır ama kusursuz değildir:
+  farklı bloklarda aynı bitkinin tekrar çekilmiş olması dışlanamaz.
+- **Kaynaklar arası:** F'nin 8 yönünden herhangi biri ile A (1057), B (1376), C (27), D (371), E (20) görüntüleri
+  arasında dHash ≤ 20 olan çift **0** (en küçük uzaklıklar: A 77, B 67, C 82, D 77, E 81). C (Embrapa) görüntüleri
+  bu denetimde **yalnız dHash için** okundu (etiket/model çıktısı yok) — §9 ve RESULTS §12.2'deki istisnayla aynı.
+  (Not: Bu denetim sırasında `src/11_bugwood_veri.py`'deki dHash'in bit sırasının `scripts/yakin_kopya.py`'nin tersi
+  olduğu fark edildi, yani E'nin A/B/C/D'ye karşı denetimi geçersizdi. Düzeltildi ve yeniden ölçüldü: E'nin A/B/C/D'ye
+  en küçük uzaklığı 78/79/85/88 — sonuç (yakın kopya 0) değişmedi.)
+
+**Ön işleme ve gözle kontrol:** `genel_maske.on_isle(otomatik)` (uygulamadaki `tahmin_et` ile aynı yol).
+3648/3648 maskelendi (3644 "genel", 4 "siyah" zemin; maske alanı medyanı %36). Kontrol sayfası
+`ciktilar/genel_model/selcuk_maske_kontrol.jpg` (48 rastgele örnek): çoğunda merkezdeki yaprak ya da birbirine değen
+birkaç yaprak alınıyor, toprak ve gökyüzü atılıyor. Hatalar: bazılarında toprak parçası maskede kalıyor (ör. Üstün42 CBB
+0016, sağlıklı 0711), bazılarında lezyonlu yaprak yerine yandaki sağlıklı yaprak ya da yaprak kümesi alınıyor.
+Alternatifler (merkez kare kırpma + maskesiz) diğer kaynaklarla (zemin siyah) tutarsız olur ve uygulamada `tahmin_et`
+yolu değiştirilmeden kullanılamazdı; bu yüzden seçilmedi. Örnek şekil: `ciktilar/sekiller/rapor/sekil_selcuk_ornekleri.png`.
+
+**Bilinen sınırlar:** (1) Sağlıklı ve CBB fotoğrafları farklı oturumlarda çekilmiş görünüyor (sağlıklılar daha mavi
+tonlu, farklı boyutlarda) — F içinde de sınıf ile çekim koşulu kısmen karışık. (2) Tek ülke, tek ekip; iki çeşit aynı
+tarla/kamera ile çekildi, bu yüzden "çeşit dışı" vekil test gerçek kaynak dışı test değildir. (3) Kadrajda çok sayıda
+yaprak var; etiket fotoğraf düzeyindedir (CBB fotoğrafında maskelenen yaprak sağlıklı olabilir).

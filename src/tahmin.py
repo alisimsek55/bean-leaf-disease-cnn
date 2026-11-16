@@ -17,8 +17,8 @@ Model: `ciktilar/genel_model/model.pt` (ya da GENEL_MODEL_YOLU ortam değişkeni
 İlk çağrıda güvenli kipte (`torch.load(weights_only=True)`) yüklenir, anahtarları ve sınıf sırası
 doğrulanır, (yol, değişiklik zamanı) anahtarıyla önbellekte tutulur. CPU'da da çalışır.
 
-Uyarı: Model 4 açık veri kaynağıyla (A, B, D=PlantWild, E=Bugwood) eğitildi; başka koşullarda (tarla fotoğrafı, farklı tür) güvenilirliği
-sınırlıdır — bkz. docs/RESULTS.tr.md §12 ve §13.
+Uyarı: Model 5 açık veri kaynağıyla (A, B, D=PlantWild, E=Bugwood, F=Selçuk) eğitildi; başka koşullarda (tarla fotoğrafı, farklı tür) güvenilirliği
+sınırlıdır — bkz. docs/RESULTS.tr.md §12–§14.
 Komut satırı: python src/tahmin.py <goruntu_yolu> [...]
 """
 import importlib

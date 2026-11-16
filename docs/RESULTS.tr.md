@@ -30,6 +30,10 @@ aynı model %52,5 doğrulukta kaldı (çoğunluk sınıfı tabanı %68,6); yani 
 Sonuç: model **aynı kaynak içinde hastalıklı ile sağlıklıyı** büyük ölçüde ayırabiliyor; fakat **CBB ile hale
 yanıklığını gerçekten ayırdığına dair kanıt yok** ve başka kaynaktan gelen görüntülere genelleme çok zayıf.
 
+**Güncelleme (2026-11-16, §14):** Türkiye'den gerçek ikinci bir CBB kaynağı (Selçuk Üniversitesi, 3648 benzersiz
+tarla fotoğrafı) eklendi. Ön eğitimli genel model, Embrapa CBB yapraklarında doğru türü 0/25'ten 5,7 ± 0,9/25'e çıkardı.
+Bu, hedeflenen %70'in hâlâ çok altında: kaynak dışında CBB/hale ayrımı güvenilir değil.
+
 ---
 
 ## 1. Veri kaynakları ve atıflar
@@ -691,6 +695,7 @@ Karşılaştırma (§12, aynı C): K1 2,7 ± 1,7 /25, K3 0,7 ± 0,5 /25 (K3 hast
 5. C sonuçları görüldükten sonra hiçbir ayar değiştirilmedi, ek C bakışı yapılmadı.
 
 ### 13.4 Dağıtılan model
+- (2026-11-16: dağıtılan model §14.5'te G1 ile değiştirildi; E2 → `model_e2_onceki.pt`.)
 - Plan gereği (C'den önce belirlendi) **`ciktilar/genel_model/model.pt` = E2, tohum 42**; önceki K3 modeli
   `model_k3_onceki.pt` olarak saklandı. C'de E2 (0/25) K3'ten (1/25) iyi değil; dağıtım kararı C'ye göre
   değiştirilmedi. E2'nin artısı: ABD/Kanada tarla CBB görüntülerini (E) görmüş olması (E doğrulama 3/6; K3: E'nin
@@ -707,3 +712,129 @@ Karşılaştırma (§12, aynı C): K1 2,7 ± 1,7 /25, K3 0,7 ± 0,5 /25 (K3 hast
   bir görünüm.
 - Daha fazla yardımcı olabilecek: *P. vulgaris* üzerinde, yaprak düzeyinde, çok kaynaklı ve uzman etiketli CBB
   ve hale verisi; "hale" sınıfının (B) uzman tarafından yeniden etiketlenmesi.
+
+## 14. Gerçek ikinci CBB kaynağı (F = Selçuk Üniversitesi, Türkiye) ile deneme — 2026-11-16
+
+Betikler: `src/12_selcuk_veri.py` (kopyalama, metadata, kopya denetimi, ön işleme, taban, örnek şekli),
+`src/09_genelleme.py` (`--selcuk tam|haric_akbulut|haric_ustun42`), `src/10_genelleme_ozet.py`. Veri ayrıntısı ve
+atıf: DATASET §10. Plan, C'ye bakılmadan önce `on_kayit_plani.txt`'ye **"EK 3"** olarak yazıldı.
+
+**Amaç:** §12–13'teki engel, CBB'nin neredeyse tamamen tek kaynaktan (A) gelmesiydi; E yalnız 20 örnekti. F, CBB
+için ilk büyük ikinci kaynak: Kursun, Gur, Bastas ve Koklu (2024), *Agronomy* 14(7):1495,
+doi:10.3390/agronomy14071495. Lisans açık değil ve atıf zorunlu; görüntüler depoya girmez.
+**Sonuç: C'de doğru CBB türü 0/25'ten 5,7 ± 0,9/25'e çıktı (3 tohum: 5, 5, 7). Bu belirgin bir iyileşme, ama %70
+hedefinin (17,5/25) çok altında.**
+
+### 14.1 F verisi ve kopya denetimi
+- 4000 JPEG (Akbulut/Üstün42 × CBB/sağlıklı, 1000'er). Hepsi tarla fotoğrafı: kadrajda çok yaprak, toprak, el var.
+- **351 birebir kopya:** `Ustun42_Healthy (1)–(351)` = `Akbulut_Healthy (1)–(351)` (SHA-256 aynı). Ayrıca 1 döndürülmüş
+  kopya bulundu (8 yönlü dHash uzaklığı 0). 352 kopya atıldı → **3648 benzersiz fotoğraf**.
+- **8 yönlü dHash** (4 döndürme × ayna, ≤ 20/256): klasör içinde döndürme/ayna/kırpma artırması **yok**. Yani veri
+  artırılmış kopyalarla şişirilmemiş.
+- **Seri grupları:** Ardışık numaralı kareler çoğu zaman aynı bitkinin ikinci çekimi (gözle doğrulandı). Bu yüzden
+  aynı klasördeki her 10'luk numara bloğu aynı grup sayıldı. Blok sınırındaki ardışık kareler, ImageNet gömme
+  benzerliği ≥ 0,85 ise birleştirildi → **274 grup** (CBB: Akbulut 87, Üstün42 95; sağlıklı: Akbulut 56, Üstün42 36).
+- **Kaynaklar arası yakın kopya:** A/B/C/D/E ile **0** (C'ye en küçük uzaklık 82). **C kopya-denetimi istisnası
+  (§12.2 ile aynı):** C görüntüleri bu denetimde yalnız dHash için okundu; etiket ya da model çıktısı kullanılmadı.
+- Bu sırada `11_bugwood_veri.py`'deki dHash bit sırası hatası bulundu ve düzeltildi. E için yeniden ölçülen sonuç
+  değişmedi (DATASET §10).
+
+### 14.2 Ön işleme kararı
+Yol: önce uzun kenar 500 px'e indirildi, sonra `genel_maske.on_isle(otomatik)` uygulandı. Küçültmenin nedeni, veride
+sınıfa göre farklı çözünürlükler olması (bazı sağlıklılar 4608×2128); bu bir kısayol olmasın diye. 3648 fotoğrafın
+hepsi maskelendi. Temas sayfasında (`ciktilar/genel_model/selcuk_maske_kontrol.jpg`, 48 örnek) çoğunda merkezdeki
+yaprak ya da birkaç yaprak alınıyor, toprak atılıyor. Bir kısmında toprak parçası kalıyor ya da lezyonsuz komşu
+yaprak seçiliyor. Merkez kare kırpma + maskesiz yol seçilmedi: diğer kaynakların siyah zeminiyle tutarsız olurdu ve
+uygulamadaki `tahmin_et` yolunu değiştirirdi. Seçilen yol `tahmin_et` ile aynı. Doğrulamadan 20 ham F fotoğrafında
+`tahmin_et` 20/20 doğru (A+B'den 20 ham fotoğrafta da 20/20). Örnekler `ciktilar/sekiller/rapor/sekil_selcuk_ornekleri.png`
+dosyasında; bu dosya F görüntüsü içerdiği için yalnız yerelde, depoya girmez.
+
+### 14.3 Protokol (EK 3; C kullanılmadan)
+- F, gruplu ve sınıf × çeşit katmanlı olarak %70/%30 bölündü (sabit tohum; hocanın şartı).
+- **Taban (eğitim yok):** önceki dağıtılan model (E2 t42) F'nin tamamında CBB'de doğru türü **103/2000** buldu
+  (Akbulut 48/1000, Üstün42 55/1000; 1381'ine "hale" dedi). Sağlıklıda 1553/1648 doğru. C'deki ayna hata F'de de büyük
+  ölçekte var.
+- **Vekiller (tohum 42), aday başına 2 koşu:**
+  - R_A: sağlıklı-A + E-yarı dışarıda, **Üstün42 tamamen dışarıda**.
+  - R_B: sağlıklı-B + E-yarı dışarıda, **Akbulut tamamen dışarıda**.
+  - Vekil skor = ort(F çeşit-dışı CBB, E-yarı CBB, sağlıklı tutma). Koşul: A+B makro F1 ≥ 0,95 ve F doğrulama
+    makro F1 ≥ 0,90.
+  - **Sınır:** Bu "aynı kaynak, farklı çeşit" testidir. Kamera, tarla, ekip ve çekim koşulları eğitimdekiyle aynı
+    olduğu için gerçek kaynak dışı başarıyı olduğundan iyi gösterir.
+- Adaylar:
+  - **G1** = E2 ayarları (B0, 224 px, güçlü artırma, web, E, hücre dengesi) + F.
+  - **G2** = G1 ama EfficientNet-B2, 256 px (8 GB'a sığdı).
+  - Not: B2'nin ImageNet ağırlıkları yerelde yoktu; torchvision bunları ilk kullanımda resmî PyTorch sunucusundan
+    indirdi (35 MB). Veri indirilmedi.
+
+**Tablo 14a — aday seçimi (tohum 42; parantez: tahmin CBB/hale/sağlıklı)**
+
+| Aday | F çeşit-dışı CBB: Üstün42 (R_A) · Akbulut (R_B) | Vekil F-CBB | E-yarı CBB (R_A · R_B) | Sağlıklı tutma A · B | Vekil skor | A+B makro F1 | F doğ. makro F1 |
+|---|---|---|---|---|---|---|---|
+| **G1** | 775/1000 (775/29/196) · 840/1000 (840/89/71) | **0,808** | 8/10 · 4/10 | 0,994 · 0,288 | **0,683** | 1,000 · 1,000 | 0,965 · 0,934 |
+| G2 (B2) | 825/1000 · 885/1000 | 0,855 | 6/10 · 4/10 | 1,000 · 0,326 | 0,673 | 1,000 · 1,000 | 0,970 · 0,941 |
+
+**Seçilen: G1.** Skoru daha yüksek; fark (0,010) zaten < 0,02 olduğu için kural gereği de basit olan seçilirdi. G2'de
+F-CBB biraz yüksek, E-CBB düşük; tek tohumla bu farklar belirsiz. Çeşit-dışı F-CBB'nin (0,78–0,84) tabandan (0,05) çok
+yüksek olması beklenen bir sonuç: model F'nin öbür çeşidini görmüştü, yani aynı tarla/kamera görünümünü tanıyor. E-yarı
+CBB, §13'teki E2'nin 0,35'inden 0,60'a çıktı. Sağlıklı-B tutma ise düşük kaldı (0,29).
+
+### 14.4 Son model ve C testi (her tohum C'de bir kez; toplam C bakışı 10 → **13**)
+
+**Tablo 14b — %70/%30 eğitim/doğrulama sayıları (A+B+D+E+F; C hariç)**
+
+| Sınıf | Eğitim | Doğrulama | Kaynak ayrıntısı (eğitim / doğrulama) |
+|---|---|---|---|
+| CBB | 1 758 | 770 | A 354 / 154, E 14 / 6, F 1 390 / 610 (Akbulut 700 / 300, Üstün42 690 / 310) |
+| Hale | 241 | 104 | B 162 / 69, D 79 / 35 |
+| Sağlıklı | 2 500 | 1 090 | A 380 / 160, B 801 / 344, D 179 / 78, F 1 140 / 508 (Akbulut 690 / 310, Üstün42 450 / 198) |
+| **Toplam** | **4 499** | **1 964** | doğrulama oranı %30,4; F grupları ayrık (eğitimde 196, doğrulamada 78 grup) |
+
+**Tablo 14c — G1 son modelleri**
+
+| Tohum | A+B doğ. / makro F1 (n = 727) | F doğ. / makro F1 (n = 1118) | Tüm doğrulama doğ. / makro F1 (n = 1964) | C: CBB doğru tür / 25 (CBB/hale/sağlıklı) | C: hastalıklı / 25* | C sağlıklı |
+|---|---|---|---|---|---|---|
+| 42 | %100 / 1,000 | %95,4 / 0,954 | %96,5 / 0,952 | **5** (5/19/1) | 24 | 2/2 |
+| 1 | %100 / 1,000 | %95,3 / 0,953 | %96,7 / 0,961 | **5** (5/19/1) | 24 | 2/2 |
+| 2 | %100 / 1,000 | %95,7 / 0,957 | %96,6 / 0,951 | **7** (7/16/2) | 23 | 2/2 |
+| **Ort. ± std** | %100 / 1,000 ± 0 | %95,5 ± 0,2 / 0,955 ± 0,002 | %96,6 ± 0,1 / 0,955 ± 0,005 | **5,7 ± 0,9** | 23,7 ± 0,5 | 2/2 |
+
+\* "Hastalıklı bulunan /25" (CBB + hale) sonradan tanımlanmış ikincil bir ölçüttür (§12.3); önceden kayıtlı ana ölçüt
+doğru CBB türüdür.
+
+Kaynak bazında (tohum 42 doğrulama): CBB A 154/154, E 6/6, F 561/610 (49'una "sağlıklı" dendi); hale B 69/69,
+**D 21/35** (tohum 1 ve 2'de 27 ve 20); sağlıklı A 160/160, B 344/344, D 75/78, F 506/508. Aynı C'de karşılaştırma:
+K1 2,7 ± 1,7, K3 0,7 ± 0,5, E2 0,0 ± 0,0 / 25. Şekil: `ciktilar/sekiller/genel_C_sonucu.png` (13 bakış).
+
+**Yorum:**
+1. **Gerçek ikinci CBB kaynağı C'yi ilk kez belirgin biçimde etkiledi** (0 → 5–7/25). Ama C'deki CBB'lerin hâlâ
+   yaklaşık %70'ine "hale" deniyor. Model artık tarla CBB'sini tanıyor. C ise laboratuvarda, kalibrasyon kartı
+   üzerinde çekilmiş tam yapraklar; alt yüzde nekroz var. Bu görünüm hem A'dan hem F'den farklı. Ayrıca "hale"
+   sınıfının kendisi de (B, D) CBB benzeri nekroz içeriyor.
+2. **Bedel:** F ile CBB eğitim örneği 368'den 1758'e çıktı, hale ise 241'de kaldı. Hücre dengesi sınıfları eşit
+   örnekliyor, ama hale çeşitliliği az. Web hale doğrulaması (D) K3'teki 31/35'ten 20–27/35'e düştü. Görülmemiş
+   kaynaklarda hale tanıma bu modelde daha zayıf olabilir; bunun için bağımsız bir hale testi yok.
+3. F doğrulaması %95,5. Hataların çoğu CBB → sağlıklı. Olası nedeni etiketin fotoğraf düzeyinde olması: maskelenen
+   yaprakta lezyon olmayabiliyor (DATASET §10).
+4. A+B doğrulama %100'de kaldı. A+B+F doğrulama sonuçları **seçim yanlıdır**: erken durdurma yok, ama aday koşulu ve
+   seçim aynı bölmeye dayanıyor.
+5. C sonuçları görüldükten sonra hiçbir ayar değiştirilmedi, ek C bakışı yapılmadı.
+
+### 14.5 Dağıtılan model
+- Plan gereği **`ciktilar/genel_model/model.pt` = G1, tohum 42** (EfficientNet-B0, 224 px). Önceki E2 modeli
+  `model_e2_onceki.pt` olarak saklandı (K3 hâlâ `model_k3_onceki.pt`). Kontrol noktası anahtarları aynı
+  (`model, omurga, boyut, isik, ortalama, std, siniflar, ayarlar`) ve `tahmin.kontrol_noktasi_dogrula`'dan geçiyor.
+  `tahmin_et` arayüzü değişmedi; `uygulama/` koduna dokunulmadı.
+- Uyarı güncel: kaynak dışında hastalık var/yok kararı makul (C'de 23–24/25). **CBB ile hale ayrımı kaynak dışında hâlâ
+  güvenilir değil** (C'de doğru tür oranı ~%23). Uygulamada hastalık olasılığı (CBB + hale) öne çıkarılmalı.
+
+### 14.6 Sınırlar
+- F tek ülkeden ve tek ekipten. Çeşit-dışı vekil test gerçek bir kaynak dışı test değil. Sağlıklı ve CBB fotoğrafları
+  farklı oturumlarda çekilmiş görünüyor (renk tonu ve boyut farkı); yani F içinde de sınıf ile çekim koşulu kısmen
+  karışık.
+- 352 sağlıklı görüntünün çeşit etiketi belirsiz (veri setinde çeşitler arası kopya var).
+- Seri gruplaması ihtiyatlı ama kusursuz değil; eşik (0,85) gözle seçildi.
+- Etiket fotoğraf düzeyinde; maske bazen lezyonsuz yaprağı alıyor.
+- Yalnız 2 aday denendi ve tek tohumla seçildi. C yalnız 25 CBB'den oluşuyor; tek yaprak %4 fark yaratıyor.
+- Hale tarafı zayıf: tek gerçek kaynak var (B, etiketleri tartışmalı) ve web verisi (D) gürültülü. Bundan sonra en
+  yararlı veri, *P. vulgaris* üzerinde, uzman etiketli ve farklı kaynaklardan gelen **hale** verisi olur.

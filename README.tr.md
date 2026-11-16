@@ -135,6 +135,8 @@ Genel model (`ciktilar/genel_model/model.pt`, `src/tahmin.py` üzerinden) varsa 
 
 **Not (2026-11-15):** İkinci bir CBB kaynağı (E) eklenerek ön eğitimli genel model yeniden eğitildi. Aynı kaynaklarda doğrulama yine %100, ama hiç görülmemiş Embrapa CBB yapraklarında doğru tür 0/25 (3 tohum; 22–24/25'ine yine "hastalıklı" deniyor). CBB/hale ayrımı kaynak dışında güvenilir değil. Ayrıntı: [docs/RESULTS.tr.md](docs/RESULTS.tr.md) §12–13.
 
+**Güncelleme (2026-11-16):** Gerçek ikinci bir CBB kaynağı eklendi: **F**, Selçuk Üniversitesi *Bean Bacterial Blight Disease Dataset* (Kursun R., Gur A., Bastas K. K., Koklu M., *Agronomy* 14(7):1495, 2024, doi:[10.3390/agronomy14071495](https://doi.org/10.3390/agronomy14071495)). Veri Türkiye'den, kopyalar (352) atıldıktan sonra 3648 benzersiz tarla fotoğrafı. Lisansı belirtilmemiş ve atıf zorunlu; bu yüzden görüntüler **yeniden dağıtılmaz**, depoda yalnız `src/12_selcuk_veri.py` ve `data/selcuk_metadata.csv` var. Yeniden eğitilen genel model, görmediği Embrapa CBB yapraklarında doğru türü 0/25'ten 5,7 ± 0,9/25'e çıkardı. Bu hâlâ güvenilir değil. Ayrıntı: §14.
+
 `ciktilar/sekiller/` altındaki şekiller bu veri setlerinden türetilmiş görüntüler (maskelenmiş, kırpılmış yaprak fotoğrafları) içerir; aynı lisans koşullarıyla, atıfla ve yalnızca ticari olmayan amaçla paylaşılır. `data/` altındaki CSV'ler yalnızca üst veri içerir, görüntü içermez. Kod [MIT lisansıdır](LICENSE); lisans veri setlerine ve onlardan türetilmiş görüntülere uzanmaz.
 
 ## Nasıl yapıldı

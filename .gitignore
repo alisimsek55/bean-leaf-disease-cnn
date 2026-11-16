@@ -15,6 +15,8 @@ data/raw_web/
 data/islenmis_web/
 data/raw_bugwood/
 data/islenmis_bugwood/
+data/raw_selcuk/
+data/islenmis_selcuk/
 data/yakin_kopyalar.csv
 
 # model weights, logs, generated outputs other than the tracked metrics and figures

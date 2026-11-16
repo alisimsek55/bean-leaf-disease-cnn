@@ -47,13 +47,14 @@ from veri import bolme_oku, etiketler, goruntuleri_yukle, maske_uygula  # noqa: 
 C_KAYNAK = "embrapa_pddb"
 WEB_KAYNAK = "plantwild_web"
 BUGWOOD_KAYNAK = "bugwood_ipm"
+SELCUK_KAYNAK = "selcuk_bbb"
 IMAGENET_ORT, IMAGENET_STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 KLASOR = CIKTI / "genel_model"
 
 
 def kaynak_kodu(k):
     return {"mendeley_ykvcrjffzd": "A", "mendeley_3km9d246z2": "B", C_KAYNAK: "C", WEB_KAYNAK: "D",
-            BUGWOOD_KAYNAK: "E"}[k]
+            BUGWOOD_KAYNAK: "E", SELCUK_KAYNAK: "F"}[k]
 
 
 # ----------------------------------------------------------------------------- girdi normalizasyonu
@@ -203,6 +204,17 @@ def bugwood_oku():
     return pd.read_csv(yol, dtype={"numara": str}) if yol.exists() else None
 
 
+def selcuk_oku():
+    yol = VERI / "islenmis_selcuk" / "selcuk_veri.csv"
+    return pd.read_csv(yol) if yol.exists() else None
+
+
+def selcuk_bol(f, tohum=TOHUM):
+    """F (Selçuk) gruplu, sınıf x çeşit katmanlı %70/%30 (12_selcuk_veri.gruplu_bol). Sabit tohum (eğitim tohumundan
+    bağımsız): her eğitim tohumunda aynı bölme."""
+    return importlib.import_module("12_selcuk_veri").gruplu_bol(f, 0.3, tohum)
+
+
 def grup_bol_tam(df, oran, tohum=TOHUM):
     """Az sayıda büyük grup için (E): toplamı oran*N'ye en yakın grup altkümelerinden biri (tohumla seçilir)
     ikinci parçaya gider. Döner (birinci, ikinci). Grup sayısı <= 16 varsayılır (tüm altkümeler denenir)."""
@@ -257,6 +269,15 @@ def web_bol(web, tohum=TOHUM, oran=0.3):
     return egt, dgr
 
 
+def cesit_bazinda(df, y, P):
+    """F için (sınıf|çeşit) bazında doğru/n ve tahmin dağılımı."""
+    p = P.argmax(1)
+    d = df.assign(y=y, p=p)
+    return {f"{s}|{c}": {"n": int(len(g)), "dogru": int((g.y == g.p).sum()), "dogruluk": float((g.y == g.p).mean()),
+                         "tahmin": [int((g.p == i).sum()) for i in range(3)]}
+            for (s, c), g in d.groupby(["sinif", "cesit"])}
+
+
 def tahminler(model, X, isik, cihaz, bs=64, tta=False):
     ds = GenelVeri(X, np.zeros(len(X), int), np.zeros(len(X), int), egitim=False, isik=isik)
     model.eval()
@@ -301,24 +322,37 @@ def calistir(a):
 
     egt, dog = bolme_oku("egitim"), bolme_oku("dogrulama")
     egt, dog = egt[egt.kaynak != C_KAYNAK], dog[dog.kaynak != C_KAYNAK]  # C hiçbir zaman burada yok
+    egt, dog = egt.assign(cesit=""), dog.assign(cesit="")
     web = web_oku()
     web_egt = web_dog = None
     if web is not None:
         web_egt, web_dog = web_bol(web)
     if a.web:
-        egt = pd.concat([egt, web_egt[egt.columns]], ignore_index=True)
-        dog = pd.concat([dog, web_dog[dog.columns]], ignore_index=True)
+        egt = pd.concat([egt, web_egt.reindex(columns=egt.columns, fill_value="")], ignore_index=True)
+        dog = pd.concat([dog, web_dog.reindex(columns=dog.columns, fill_value="")], ignore_index=True)
     e_test = None
     if a.bugwood != "yok":
         bw = bugwood_oku()
         assert bw is not None, "önce src/11_bugwood_veri.py çalıştırılmalı"
         if a.bugwood == "yari":  # vekil: E'nin yarısı eğitimde, diğer yarısı tamamen dışarıda (kaynak-dışı CBB testi)
             e_egt, e_test = bugwood_yari(bw)
-            egt = pd.concat([egt, e_egt[egt.columns]], ignore_index=True)
+            egt = pd.concat([egt, e_egt.reindex(columns=egt.columns, fill_value="")], ignore_index=True)
         else:  # tam: E de %70/%30 gruplu bölünür
             e_egt, e_dog = grup_bol_tam(bw, 0.3)
-            egt = pd.concat([egt, e_egt[egt.columns]], ignore_index=True)
-            dog = pd.concat([dog, e_dog[dog.columns]], ignore_index=True)
+            egt = pd.concat([egt, e_egt.reindex(columns=egt.columns, fill_value="")], ignore_index=True)
+            dog = pd.concat([dog, e_dog.reindex(columns=dog.columns, fill_value="")], ignore_index=True)
+    f_test = None
+    if a.selcuk != "yok":  # EK 3: F (Selçuk) %70/%30 gruplu; haric_<cesit>: o çeşit eğitim/doğrulamadan tamamen çıkar
+        fs = selcuk_oku()
+        assert fs is not None, "önce src/12_selcuk_veri.py çalıştırılmalı"
+        f_egt, f_dog = selcuk_bol(fs)
+        if a.selcuk.startswith("haric_"):
+            cs = a.selcuk[len("haric_"):]
+            assert cs in set(fs.cesit), cs
+            f_test = fs[fs.cesit == cs].reset_index(drop=True)
+            f_egt, f_dog = f_egt[f_egt.cesit != cs], f_dog[f_dog.cesit != cs]
+        egt = pd.concat([egt, f_egt.reindex(columns=egt.columns)], ignore_index=True)
+        dog = pd.concat([dog, f_dog.reindex(columns=dog.columns)], ignore_index=True)
     tutulan = None
     if a.protokol.startswith("haric_saglikli_"):
         kay = {"A": "mendeley_ykvcrjffzd", "B": "mendeley_3km9d246z2"}[a.protokol[-1]]
@@ -330,6 +364,7 @@ def calistir(a):
 
     kaynak_idx = {k: i for i, k in enumerate(["mendeley_ykvcrjffzd", "mendeley_3km9d246z2", WEB_KAYNAK])}
     kaynak_idx[BUGWOOD_KAYNAK] = 2  # kaynak başı yalnız GRL'de (sağlıklılarda) kullanılır; E'de sağlıklı yok
+    kaynak_idx[SELCUK_KAYNAK] = 2  # GRL bu çalışmada kullanılmıyor; yalnız indeks geçerli olsun diye
     Xe = goruntuleri_yukle(egt, boyut=a.boyut)
     ye, ke = etiketler(egt), egt.kaynak.map(kaynak_idx).to_numpy()
     de = GenelVeri(Xe, ye, ke, egitim=True, artirma=a.artirma, isik=a.isik, boyut=a.boyut)
@@ -388,6 +423,10 @@ def calistir(a):
     sonuc["dogrulama"] = metrik(dog, yd, Pd)
     ab = dog.kaynak.isin(["mendeley_ykvcrjffzd", "mendeley_3km9d246z2"]).to_numpy()
     sonuc["dogrulama_AB"] = metrik(dog[ab], yd[ab], Pd[ab])
+    fm = (dog.kaynak == SELCUK_KAYNAK).to_numpy()
+    if fm.any():
+        sonuc["dogrulama_F"] = metrik(dog[fm], yd[fm], Pd[fm])
+        sonuc["dogrulama_F_cesit"] = cesit_bazinda(dog[fm], yd[fm], Pd[fm])
     pd.DataFrame(Pd, columns=SINIFLAR).assign(dosya=dog.dosya, sinif=dog.sinif, kaynak=dog.kaynak).to_csv(
         kl / "dogrulama_olasiliklar.csv", index=False)
     if tutulan is not None:
@@ -401,13 +440,25 @@ def calistir(a):
         sonuc["vekil_E_hastalikli"] = float((P.argmax(1) != SINIFLAR.index("saglikli")).mean())
         pd.DataFrame(P, columns=SINIFLAR).assign(dosya=e_test.dosya, grup=e_test.grup).to_csv(
             kl / "bugwood_vekil_olasiliklar.csv", index=False)
+    if f_test is not None:
+        P = tahminler(model, goruntuleri_yukle(f_test, boyut=a.boyut), a.isik, cihaz)
+        yf = etiketler(f_test)
+        sonuc["selcuk_cesit_disi"] = metrik(f_test, yf, P)
+        cbb = yf == SINIFLAR.index("adi_yaprak_yanikligi")
+        sonuc["vekil_F_CBB"] = float((P.argmax(1)[cbb] == yf[cbb]).mean())
+        sonuc["vekil_F_CBB_hastalikli"] = float((P.argmax(1)[cbb] != SINIFLAR.index("saglikli")).mean())
+        sonuc["vekil_F_saglikli"] = float((P.argmax(1)[~cbb] == yf[~cbb]).mean())
+        pd.DataFrame(P, columns=SINIFLAR).assign(dosya=f_test.dosya, sinif=f_test.sinif, cesit=f_test.cesit).to_csv(
+            kl / "selcuk_cesit_disi_olasiliklar.csv", index=False)
     if web is not None and not a.web:
         P = tahminler(model, goruntuleri_yukle(web, boyut=a.boyut), a.isik, cihaz)
         sonuc["web_kaynak_disi"] = metrik(web, etiketler(web), P)
         pd.DataFrame(P, columns=SINIFLAR).assign(dosya=web.dosya, sinif=web.sinif).to_csv(
             kl / "web_olasiliklar.csv", index=False)
     yaz("A+B doğrulama: " + json.dumps({k: sonuc["dogrulama_AB"][k] for k in ("n", "dogruluk", "makro_f1")}))
-    for anahtar in ("tutulan_saglikli", "web_kaynak_disi", "bugwood_vekil_test"):
+    if "dogrulama_F" in sonuc:
+        yaz("F doğrulama: " + json.dumps({k: sonuc["dogrulama_F"][k] for k in ("n", "dogruluk", "makro_f1")}))
+    for anahtar in ("tutulan_saglikli", "web_kaynak_disi", "bugwood_vekil_test", "selcuk_cesit_disi"):
         if anahtar in sonuc:
             yaz(f"{anahtar}: " + json.dumps(sonuc[anahtar]["kaynak_bazinda"], ensure_ascii=False))
 
@@ -424,7 +475,8 @@ def calistir(a):
         pd.DataFrame(Pc, columns=SINIFLAR).assign(dosya=dc.dosya, sinif=dc.sinif).to_csv(
             kl / "C_olasiliklar.csv", index=False)
         with open(KLASOR / "c_bakis_kaydi.jsonl", "a", encoding="utf-8") as f:
-            f.write(json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), "deney": kl.name,
+            f.write(json.dumps({"zaman": datetime.now().isoformat(timespec="seconds"), "durum": "tamamlandi",
+                                "deney": kl.name,
                                 "C_CBB_dogru": sonuc["C_test"]["kaynak_bazinda"].get("adi_yaprak_yanikligi|C", {}).get("dogru"),
                                 "C_toplam_dogru": int((Pc.argmax(1) == etiketler(dc)).sum())}, ensure_ascii=False) + "\n")
         yaz("C TESTİ: " + json.dumps(sonuc["C_test"]["kaynak_bazinda"], ensure_ascii=False))
@@ -445,6 +497,9 @@ def arg_ayristirici():
     p.add_argument("--web", action="store_true", help="D (PlantWild web) eğitim bölmesini eğitime kat")
     p.add_argument("--bugwood", default="yok", choices=["yok", "yari", "tam"],
                    help="E (Bugwood CBB): yari = yarısı eğitimde, yarısı vekil kaynak-dışı test; tam = %%70/%%30")
+    p.add_argument("--selcuk", default="yok", choices=["yok", "tam", "haric_akbulut", "haric_ustun42"],
+                   help="F (Selçuk CBB/sağlıklı): tam = %%70/%%30 gruplu; haric_<cesit> = o çeşit tamamen dışarıda "
+                        "(vekil 'aynı kaynak, farklı çeşit' testi)")
     p.add_argument("--boyut", type=int, default=224)
     p.add_argument("--epoch", type=int, default=15)
     p.add_argument("--batch", type=int, default=32)

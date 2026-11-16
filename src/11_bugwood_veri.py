@@ -58,13 +58,17 @@ def kirpma_kutusu(kirpma, W, H, alt_kesim=ALT_KESIM):
 
 
 def dhash_dizi(rgb):
-    """yk.dhash ile aynı (yol yerine dizi alır)."""
+    """yk.dhash ile aynı (yol yerine dizi alır; bit y*N+x = piksel(y,x) > piksel(y,x+1)).
+    Not (2026-11-16): ilk sürüm bitleri ters sırada (ilk piksel en yüksek bit) topluyordu; A/B/C/D ile
+    karşılaştırma bu yüzden geçersizdi. Düzeltilmiş tanımla yeniden ölçüldü: E'nin A/B/C/D'ye en küçük
+    uzaklığı 78/79/85/88 (> 20; 8 yönlü dahil) — sonuç (yakın kopya 0) değişmedi."""
     g = Image.fromarray(rgb).convert("L").resize((yk.N + 1, yk.N), Image.LANCZOS)
     p = g.tobytes()
     bit = 0
     for y in range(yk.N):
         for x in range(yk.N):
-            bit = (bit << 1) | (p[y * (yk.N + 1) + x] > p[y * (yk.N + 1) + x + 1])
+            if p[y * (yk.N + 1) + x] > p[y * (yk.N + 1) + x + 1]:
+                bit |= 1 << (y * yk.N + x)
     return bit
 
 

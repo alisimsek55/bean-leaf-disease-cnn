@@ -67,6 +67,12 @@ def main():
             if k:
                 r[f"tutma_{kay}"] = S[k]["vekil_tutma"]
                 r[f"AB_makro_f1_{kay}"] = S[k]["dogrulama_AB"]["makro_f1"]
+                if "vekil_F_CBB" in S[k]:  # EK 3: F çeşit-dışı (aynı kaynak, görülmemiş çeşit) CBB
+                    r[f"F_CBB_{kay}"] = S[k]["vekil_F_CBB"]
+                    r[f"F_CBB_hastalikli_{kay}"] = S[k]["vekil_F_CBB_hastalikli"]
+                    r[f"F_saglikli_{kay}"] = S[k]["vekil_F_saglikli"]
+                    r[f"F_cesit_disi_{kay}"] = S[k]["ayarlar"]["selcuk"]
+                    r[f"F_dogrulama_makro_f1_{kay}"] = S[k].get("dogrulama_F", {}).get("makro_f1")
                 if "vekil_E_CBB" in S[k]:
                     r[f"E_CBB_{kay}"] = S[k]["vekil_E_CBB"]
                     r[f"E_hastalikli_{kay}"] = S[k]["vekil_E_hastalikli"]
@@ -76,6 +82,9 @@ def main():
         if "E_CBB_A" in r and "E_CBB_B" in r:  # EK 2 (on_kayit_plani): E-yari vekil CBB testi
             r["vekil_E_CBB"] = (r["E_CBB_A"] + r["E_CBB_B"]) / 2
             r["vekil_skor_E"] = (r["vekil_E_CBB"] + r["vekil_skor"]) / 2
+        if "F_CBB_A" in r and "F_CBB_B" in r and "vekil_E_CBB" in r:  # EK 3 skoru
+            r["vekil_F_CBB"] = (r["F_CBB_A"] + r["F_CBB_B"]) / 2
+            r["vekil_skor_F"] = (r["vekil_F_CBB"] + r["vekil_E_CBB"] + r["vekil_skor"]) / 3
         ozet["vekil"][ad] = r
     for k, v in S.items():
         if "C_test" in v:
@@ -91,6 +100,10 @@ def main():
             ozet["son"][k]["tum_n"] = v["dogrulama"]["n"]
             ozet["son"][k]["C_hastalikli"] = int(sum(kb.get("adi_yaprak_yanikligi|C", {}).get("tahmin", [0, 0, 0])[:2]))
             ozet["son"][k]["E_dogrulama"] = v["dogrulama"]["kaynak_bazinda"].get("adi_yaprak_yanikligi|E")
+            if "dogrulama_F" in v:
+                ozet["son"][k]["F_dogruluk"] = v["dogrulama_F"]["dogruluk"]
+                ozet["son"][k]["F_makro_f1"] = v["dogrulama_F"]["makro_f1"]
+                ozet["son"][k]["F_cesit"] = v["dogrulama_F_cesit"]
             if "dogrulama" in v and v["dogrulama"]["n"] != v["dogrulama_AB"]["n"]:
                 ozet["son"][k]["D_dogrulama"] = {kk: vv for kk, vv in v["dogrulama"]["kaynak_bazinda"].items() if kk.endswith("|D")}
     # model grubu bazında ortalama ± std
@@ -100,7 +113,8 @@ def main():
     ozet["son_grup"] = {g: {"tohum_sayisi": len(L),
                             **{m: [float(np.mean([x[m] for x in L])), float(np.std([x[m] for x in L]))]
                                for m in ("AB_dogruluk", "AB_makro_f1", "tum_dogruluk", "tum_makro_f1", "C_CBB_dogru",
-                                         "C_hastalikli", "C_toplam_dogru")}}
+                                         "C_hastalikli", "C_toplam_dogru", "F_dogruluk", "F_makro_f1")
+                               if all(m in x for x in L)}}
                         for g, L in gruplar.items()}
     bak = KL / "c_bakis_kaydi.jsonl"
     # "basladi" satırları okuma denemesi kaydıdır; bakış sayısı tamamlanan (ya da eski biçimli) kayıtlardır
@@ -133,7 +147,8 @@ def main():
     ax.set_xticks(x, [f"{KISA_AD[k.split('|')[0]]}\nkaynak {k.split('|')[1]}" for k in adlar], fontsize=8)
     ax.set_ylim(0, 110)
     ax.set_ylabel("Doğruluk (%)")
-    ax.set_title("Dağıtılan model: (sınıf, kaynak) bazında doğruluk — mavi: doğrulama, kırmızı: C (eğitimde hiç yok)", fontsize=10)
+    ax.set_title("Dağıtılan model: (sınıf, kaynak) bazında doğruluk — mavi: doğrulama, kırmızı: C (eğitimde hiç yok)\n"
+                 "A, B: Mendeley (Bangladeş); D: PlantWild web; E: Bugwood; F: Selçuk (Türkiye)", fontsize=10)
     fig.tight_layout()
     fig.savefig(SEKIL / "genel_kaynak_bazinda.png", dpi=150)
     plt.close(fig)
@@ -141,9 +156,10 @@ def main():
 
     kisa = {"SON_K1_b0_temel": "B0 temel", "SON_K3_b0_guclu_web": "B0 güçlü+web\n(önceki seçilen)",
             "SON_CNN_guclu_web": "Özel CNN\ngüçlü+web", "SON_E1_b0_guclu_web_E": "B0 güçlü+web+E\n(yeni)",
-            "SON_E2_b0_guclu_web_E_hucre": "B0+web+E\n+hücre (yeni)"}
+            "SON_E2_b0_guclu_web_E_hucre": "B0+web+E\n+hücre (§13)", "SON_G1_b0_E2_F": "E2 + F\n(Selçuk)",
+            "SON_G2_b2_E2_F": "B2: E2 + F\n(Selçuk)"}
     etiket, dag = ["Sıfırdan CNN\n(önceki §6.2c)"], [[2, 13, 10]]
-    for k in sorted(ozet["son"], key=lambda x: ("_E" in x, x.rsplit("_tam_", 1)[0] != "SON_K1_b0_temel", x)):
+    for k in sorted(ozet["son"], key=lambda x: ("_G" in x, "_E" in x, x.rsplit("_tam_", 1)[0] != "SON_K1_b0_temel", x)):
         g, t = k.rsplit("_tam_", 1)
         etiket.append(f"{kisa.get(g, g)}\ntohum {t[1:]}")
         dag.append(ozet["son"][k]["C_CBB_tahmin"])
